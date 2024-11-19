@@ -1,0 +1,33 @@
+﻿{
+  "name": "com.nonatomic.uitable",
+  "version": "0.0.0-beta",
+  "displayName": "UIElement Table",
+  "description": "UIElement Table",
+  "unity": "2022.3",
+  "unityRelease": "1f1",
+  "documentationUrl": "https://github.com/PaulNonatomic/UIElementTable/blob/main/README.md",
+  "changelogUrl": "https://github.com/PaulNonatomic/UIElementTable/blob/main/CHANGELOG.md",
+  "dependencies": {
+    "com.unity.test-framework": "1.3.9"
+  },
+  "keywords": [
+    "Unity",
+    "Package",
+    "Service",
+    "Locator"
+  ],
+  "author": {
+    "name": "Nonatomic",
+    "email": "paul@nonatomic.co.uk",
+    "url": "https://nonatomic.co.uk/"
+  },
+  "type": "tool",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:PaulNonatomic/UIElementTable.git"
+  },
+  "samples": [
+   
+  ]
+}
+  
