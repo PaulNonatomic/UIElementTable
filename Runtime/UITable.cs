@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Nonatomic.UIElements
@@ -10,28 +11,66 @@ namespace Nonatomic.UIElements
 		private ScrollView _contentScrollView;
 		private VisualElement _firstColumnContainer;
 
-		public UITable(int rowCount, int columnCount)
+		public UITable(
+			int rowCount,
+			int columnCount = 0,
+			float defaultColumnWidth = 100f,
+			float defaultRowHeight = 30f,
+			List<ColumnDefinition> columns = null,
+			Dictionary<int, float> rowHeights = null)
 		{
 			AddToClassList("ui-table");
 
 			styleSheets.Add(Resources.Load<StyleSheet>("UITable"));
 
-			var topRowContainer = CreateTopRow(columnCount);
+			// Handle columns being null or empty
+			if (columns == null || columns.Count == 0)
+			{
+				if (columnCount <= 0)
+				{
+					throw new System.ArgumentException("Either columns must be provided, or columnCount must be greater than 0.");
+				}
+
+				// Generate default columns
+				columns = GenerateDefaultColumns(columnCount, defaultColumnWidth);
+			}
+
+			var topRowContainer = CreateTopRow(columns, defaultColumnWidth, defaultRowHeight);
 			Add(topRowContainer);
 
-			var contentRowContainer = CreateContentArea(rowCount, columnCount);
+			var contentRowContainer = CreateContentArea(rowCount, columns, defaultColumnWidth, defaultRowHeight, rowHeights);
 			Add(contentRowContainer);
 
 			SynchronizeScrolling();
 		}
 
-		private VisualElement CreateTopRow(int columnCount)
+		private List<ColumnDefinition> GenerateDefaultColumns(int columnCount, float defaultColumnWidth)
+		{
+			var columns = new List<ColumnDefinition>();
+
+			// First column is the row header
+			columns.Add(new ColumnDefinition("Row Header", defaultColumnWidth));
+
+			for (int i = 1; i < columnCount; i++)
+			{
+				columns.Add(new ColumnDefinition($"Column {i}", defaultColumnWidth));
+			}
+
+			return columns;
+		}
+
+		private VisualElement CreateTopRow(
+			List<ColumnDefinition> columns,
+			float defaultColumnWidth,
+			float defaultRowHeight)
 		{
 			var topRowContainer = new VisualElement();
 			topRowContainer.AddToClassList("ui-table__top-row");
 
-			// Top-left corner cell
-			var topLeftCornerCell = TableCell.Create("Header");
+			// Top-left corner cell (row header)
+			var firstColumn = columns[0];
+			var firstColumnWidth = firstColumn.Width ?? defaultColumnWidth;
+			var topLeftCornerCell = TableCell.Create(firstColumn.Label, firstColumnWidth, defaultRowHeight);
 			topLeftCornerCell.AddToClassList("ui-table__header-cell");
 			topRowContainer.Add(topLeftCornerCell);
 
@@ -41,10 +80,11 @@ namespace Nonatomic.UIElements
 			topRowContainer.Add(_headerScrollView);
 
 			// Populate header cells
-			for (var i = 1; i <= columnCount; i++)
+			for (var i = 1; i < columns.Count; i++)
 			{
-				var labelString = i == 0 ? string.Empty : $"Header {i}";
-				var headerCell = TableCell.Create(labelString);
+				var column = columns[i];
+				var columnWidth = column.Width ?? defaultColumnWidth;
+				var headerCell = TableCell.Create(column.Label, columnWidth, defaultRowHeight);
 				headerCell.AddToClassList("ui-table__header-cell");
 				_headerScrollView.contentContainer.Add(headerCell);
 			}
@@ -59,17 +99,18 @@ namespace Nonatomic.UIElements
 			RegisterCallback<GeometryChangedEvent>((evt) =>
 			{
 				var scrollbarWidth = _contentScrollView.verticalScroller.resolvedStyle.width;
-				if (scrollbarWidth == 0)
-				{
-					scrollbarWidth = 0f; 
-				}
-				spacer.style.width = scrollbarWidth;
+				spacer.style.width = scrollbarWidth > 0 ? scrollbarWidth : 0f;
 			});
 
 			return topRowContainer;
 		}
 
-		private VisualElement CreateContentArea(int rowCount, int columnCount)
+		private VisualElement CreateContentArea(
+			int rowCount,
+			List<ColumnDefinition> columns,
+			float defaultColumnWidth,
+			float defaultRowHeight,
+			Dictionary<int, float> rowHeights)
 		{
 			var contentRowContainer = new VisualElement();
 			contentRowContainer.AddToClassList("ui-table__content-row");
@@ -78,44 +119,38 @@ namespace Nonatomic.UIElements
 			_firstColumnContainer = new VisualElement();
 			_firstColumnContainer.AddToClassList("ui-table__first-content-column");
 			contentRowContainer.Add(_firstColumnContainer);
-			
+
 			_firstColumnScrollView = TableScrollView.CreateVertical(isInteractive: false, hideVerticalScrollbar: true);
 			_firstColumnScrollView.AddToClassList("ui-table__scrollview-content-column");
 			_firstColumnContainer.Add(_firstColumnScrollView);
 
-			// Populate first column cells
+			// Get first column width
+			var firstColumn = columns[0];
+			var firstColumnWidth = firstColumn.Width ?? defaultColumnWidth;
+
+			// Populate first column cells (row headers)
 			for (var i = 1; i <= rowCount; i++)
 			{
-				var firstColumnCell = TableCell.Create($"{i}");
+				var rowHeight = rowHeights != null && rowHeights.ContainsKey(i) ? rowHeights[i] : defaultRowHeight;
+				var firstColumnCell = TableCell.Create($"Row {i}", firstColumnWidth, rowHeight);
 
 				// Assign even or odd class
-				if (i % 2 == 0)
-				{
-					firstColumnCell.AddToClassList("ui-table__fixed-column--even");
-				}
-				else
-				{
-					firstColumnCell.AddToClassList("ui-table__fixed-column--odd");
-				}
+				firstColumnCell.AddToClassList(i % 2 == 0 ? "ui-table__fixed-column--even" : "ui-table__fixed-column--odd");
 
 				_firstColumnScrollView.contentContainer.Add(firstColumnCell);
 			}
-			
+
 			// Add spacer element to account for scrollbar height
 			var spacer = new VisualElement();
 			spacer.style.flexShrink = 0;
 			spacer.style.flexGrow = 0;
 			_firstColumnContainer.Add(spacer);
 
-			// Delay setting the spacer width until layout is ready
+			// Delay setting the spacer height until layout is ready
 			RegisterCallback<GeometryChangedEvent>((evt) =>
 			{
 				var scrollbarHeight = _contentScrollView.horizontalScroller.resolvedStyle.height;
-				if (scrollbarHeight == 0)
-				{
-					scrollbarHeight = 0f; // Default value, adjust as needed
-				}
-				spacer.style.height = scrollbarHeight;
+				spacer.style.height = scrollbarHeight > 0 ? scrollbarHeight : 0f;
 			});
 
 			// Main Content ScrollView (interactive with visible scrollbars)
@@ -126,24 +161,34 @@ namespace Nonatomic.UIElements
 			// Populate content cells
 			for (var i = 1; i <= rowCount; i++)
 			{
+				var rowHeight = rowHeights != null && rowHeights.ContainsKey(i) ? rowHeights[i] : defaultRowHeight;
+
 				var row = new VisualElement();
 				row.AddToClassList("ui-table__row");
-				row.style.width = columnCount * 100;
+				row.style.flexDirection = FlexDirection.Row;
 				row.style.flexShrink = 0;
-				
-				// Assign even or odd class
-				if (i % 2 == 0)
+				row.style.height = rowHeight;
+
+				// Calculate total row width based on column widths
+				float totalRowWidth = 0f;
+
+				for (var j = 1; j < columns.Count; j++)
 				{
-					row.AddToClassList("ui-table__row--even");
-				}
-				else
-				{
-					row.AddToClassList("ui-table__row--odd");
+					var column = columns[j];
+					var columnWidth = column.Width ?? defaultColumnWidth;
+					totalRowWidth += columnWidth;
 				}
 
-				for (var j = 1; j <= columnCount; j++)
+				row.style.width = totalRowWidth;
+
+				// Assign even or odd class
+				row.AddToClassList(i % 2 == 0 ? "ui-table__row--even" : "ui-table__row--odd");
+
+				for (var j = 1; j < columns.Count; j++)
 				{
-					var cell = TableCell.Create($"Cell {i},{j}");
+					var column = columns[j];
+					var columnWidth = column.Width ?? defaultColumnWidth;
+					var cell = TableCell.Create($"Cell {i},{j}", columnWidth, rowHeight);
 					row.Add(cell);
 				}
 
@@ -158,13 +203,13 @@ namespace Nonatomic.UIElements
 			// Synchronize horizontal scrolling
 			_contentScrollView.horizontalScroller.valueChanged += (value) =>
 			{
-				_headerScrollView.scrollOffset = new(value, _headerScrollView.scrollOffset.y);
+				_headerScrollView.scrollOffset = new Vector2(value, _headerScrollView.scrollOffset.y);
 			};
 
 			// Synchronize vertical scrolling
 			_contentScrollView.verticalScroller.valueChanged += (value) =>
 			{
-				_firstColumnScrollView.scrollOffset = new (_firstColumnScrollView.scrollOffset.x, value);
+				_firstColumnScrollView.scrollOffset = new Vector2(_firstColumnScrollView.scrollOffset.x, value);
 			};
 		}
 	}
