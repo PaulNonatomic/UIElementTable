@@ -38,7 +38,6 @@
 
 /* Table cell */
 .ui-table__cell {
-    width: 100px;
     min-height: 30px;
     flex-shrink: 0;
     flex-grow: 0;
@@ -70,22 +69,20 @@
 }
 
 .ui-table__scrollview--vertical {
-    width: 100px;
+    
 }
 
 .ui-table__scrollview-content-row {
     flex-direction: row;
 }
 
-.ui-table__first-content-column {
+.ui-table__row-numbers-column {
     flex-direction: column;
-    width: 100px;
     flex-shrink: 0;
 }
 
 .ui-table__scrollview-content-column {
     flex-direction: column;
-    width: 100px;
     flex-shrink: 1;
 }
 
