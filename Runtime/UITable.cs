@@ -10,6 +10,7 @@ namespace Nonatomic.UIElements
 		private ScrollView _firstColumnScrollView;
 		private ScrollView _contentScrollView;
 		private VisualElement _firstColumnContainer;
+		private List<List<VisualElement>> _contentCells;
 
 		public UITable(
 			int rowCount,
@@ -19,9 +20,11 @@ namespace Nonatomic.UIElements
 			List<ColumnDefinition> columns = null,
 			Dictionary<int, float> rowHeights = null)
 		{
-			AddToClassList("ui-table");
-
+			//Style
 			styleSheets.Add(Resources.Load<StyleSheet>("UITable"));
+			AddToClassList("ui-table");
+			
+			_contentCells = new List<List<VisualElement>>();
 
 			// Handle columns being null or empty
 			if (columns == null || columns.Count == 0)
@@ -43,6 +46,24 @@ namespace Nonatomic.UIElements
 
 			SynchronizeScrolling();
 		}
+		
+		public void SetCellContent(int rowIndex, int columnIndex, VisualElement content)
+		{
+			if (rowIndex < 0 || rowIndex >= _contentCells.Count)
+			{
+				throw new System.ArgumentOutOfRangeException(nameof(rowIndex));
+			}
+			
+			if (columnIndex < 0 || columnIndex >= _contentCells[rowIndex].Count)
+			{
+				throw new System.ArgumentOutOfRangeException(nameof(columnIndex));
+			}
+			
+			var cell = _contentCells[rowIndex][columnIndex];
+			cell.Clear(); // Remove any existing content
+			cell.Add(content);
+		}
+
 
 		private List<ColumnDefinition> GenerateDefaultColumns(int columnCount, float defaultColumnWidth)
 		{
@@ -172,11 +193,25 @@ namespace Nonatomic.UIElements
 				// Calculate total row width based on column widths
 				float totalRowWidth = 0f;
 
+				var contentRowCells = new List<VisualElement>();
+
 				for (var j = 1; j < columns.Count; j++)
 				{
 					var column = columns[j];
 					var columnWidth = column.Width ?? defaultColumnWidth;
 					totalRowWidth += columnWidth;
+
+					var cell = new VisualElement();
+					cell.AddToClassList("ui-table__cell");
+					cell.style.width = columnWidth;
+					cell.style.height = rowHeight;
+
+					// Do not add a label to the cell by default
+					// Add cell to row
+					row.Add(cell);
+
+					// Store cell in contentRowCells
+					contentRowCells.Add(cell);
 				}
 
 				row.style.width = totalRowWidth;
@@ -184,14 +219,7 @@ namespace Nonatomic.UIElements
 				// Assign even or odd class
 				row.AddToClassList(i % 2 == 0 ? "ui-table__row--even" : "ui-table__row--odd");
 
-				for (var j = 1; j < columns.Count; j++)
-				{
-					var column = columns[j];
-					var columnWidth = column.Width ?? defaultColumnWidth;
-					var cell = TableCell.Create($"Cell {i},{j}", columnWidth, rowHeight);
-					row.Add(cell);
-				}
-
+				_contentCells.Add(contentRowCells);
 				_contentScrollView.contentContainer.Add(row);
 			}
 
