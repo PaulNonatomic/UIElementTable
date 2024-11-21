@@ -220,7 +220,7 @@ namespace Nonatomic.UIElements
 			for (var i = 1; i <= rowCount; i++)
 			{
 				var rowHeight = rowHeights != null && rowHeights.ContainsKey(i) ? rowHeights[i] : defaultRowHeight;
-				var firstColumnCell = TableCell.Create($"Row {i}", firstColumnWidth, rowHeight);
+				var firstColumnCell = TableCell.Create($"{i}", firstColumnWidth, rowHeight);
 				var rowIndex = _firstColumnCells.Count;
 				firstColumnCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(rowIndex));
 				firstColumnCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(rowIndex));
