@@ -98,3 +98,46 @@
 .ui-table__row {
     flex-direction: row;
 }
+
+/* Highlighting */
+
+/* Highlighted cell */
+.ui-table__cell--highlighted {
+    background-color: #5a5a5a;
+}
+
+/* Highlighted row */
+.ui-table__row--highlighted .ui-table__cell,
+.ui-table__row--highlighted .ui-table__fixed-column--even,
+.ui-table__row--highlighted .ui-table__fixed-column--odd {
+    background-color: #5a5a5a;
+}
+
+/* Highlighted column */
+.ui-table__column--highlighted {
+    background-color: #5a5a5a;
+}
+
+/* Highlighted entire table */
+.ui-table--highlighted .ui-table__cell,
+.ui-table--highlighted .ui-table__header-cell,
+.ui-table--highlighted .ui-table__fixed-column--even,
+.ui-table--highlighted .ui-table__fixed-column--odd {
+    background-color: #5a5a5a;
+}
+
+/* Highlighted row */
+.ui-table__row--highlighted .ui-table__cell {
+    background-color: #5a5a5a;
+}
+
+.ui-table__row--highlighted {
+    background-color: #5a5a5a;
+}
+
+.ui-table__row--highlighted.ui-table__fixed-column--even,
+.ui-table__row--highlighted.ui-table__fixed-column--odd {
+    background-color: #5a5a5a;
+}
+
+

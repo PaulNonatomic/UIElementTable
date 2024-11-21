@@ -90,7 +90,7 @@ namespace Nonatomic.UIElements
 
 				// Get the maximum height between the content row and the first column cell
 				var maxHeight = Mathf.Max(contentRow.resolvedStyle.height, firstColumnCell.resolvedStyle.height);
-
+				
 				// Set the heights to the maximum value
 				contentRow.style.height = maxHeight;
 				firstColumnCell.style.height = maxHeight;
@@ -152,6 +152,9 @@ namespace Nonatomic.UIElements
 			var firstColumnWidth = firstColumn.Width ?? defaultColumnWidth;
 			var topLeftCornerCell = TableCell.Create(firstColumn.Label, firstColumnWidth, defaultRowHeight);
 			topLeftCornerCell.AddToClassList("ui-table__header-cell");
+			topLeftCornerCell.RegisterCallback<PointerEnterEvent>(evt => OnTopLeftCellPointerEnter());
+			topLeftCornerCell.RegisterCallback<PointerLeaveEvent>(evt => OnTopLeftCellPointerLeave());
+
 			topRowContainer.Add(topLeftCornerCell);
 
 			// Header ScrollView (non-interactive)
@@ -166,6 +169,11 @@ namespace Nonatomic.UIElements
 				var columnWidth = column.Width ?? defaultColumnWidth;
 				var headerCell = TableCell.Create(column.Label, columnWidth, defaultRowHeight);
 				headerCell.AddToClassList("ui-table__header-cell");
+				
+				var columnIndex = i - 1;
+				headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(columnIndex));
+				headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(columnIndex));
+				
 				_headerScrollView.contentContainer.Add(headerCell);
 			}
 
@@ -213,6 +221,9 @@ namespace Nonatomic.UIElements
 			{
 				var rowHeight = rowHeights != null && rowHeights.ContainsKey(i) ? rowHeights[i] : defaultRowHeight;
 				var firstColumnCell = TableCell.Create($"Row {i}", firstColumnWidth, rowHeight);
+				var rowIndex = _firstColumnCells.Count;
+				firstColumnCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(rowIndex));
+				firstColumnCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(rowIndex));
 				_firstColumnCells.Add(firstColumnCell);
 
 				// Assign even or odd class
@@ -287,6 +298,11 @@ namespace Nonatomic.UIElements
 						cell.style.height = rowHeight;
 						cell.style.minHeight = StyleKeyword.Null;
 					}
+					
+					// Listen for pointer events on the cell
+					cell.RegisterCallback<PointerEnterEvent>(evt => OnCellPointerEnter(cell));
+					cell.RegisterCallback<PointerLeaveEvent>(evt => OnCellPointerLeave(cell));
+
 
 					// Do not add a label to the cell by default
 					// Add cell to row
@@ -321,6 +337,62 @@ namespace Nonatomic.UIElements
 			{
 				_firstColumnScrollView.scrollOffset = new Vector2(_firstColumnScrollView.scrollOffset.x, value);
 			};
+		}
+		
+		private void OnCellPointerEnter(VisualElement cell)
+		{
+			cell.AddToClassList("ui-table__cell--highlighted");
+		}
+
+		private void OnCellPointerLeave(VisualElement cell)
+		{
+			cell.RemoveFromClassList("ui-table__cell--highlighted");
+		}
+		
+		private void OnRowHeaderPointerEnter(int rowIndex)
+		{
+			_contentRows[rowIndex].AddToClassList("ui-table__row--highlighted");
+			_firstColumnCells[rowIndex].AddToClassList("ui-table__row--highlighted");
+		}
+
+		private void OnRowHeaderPointerLeave(int rowIndex)
+		{
+			_contentRows[rowIndex].RemoveFromClassList("ui-table__row--highlighted");
+			_firstColumnCells[rowIndex].RemoveFromClassList("ui-table__row--highlighted");
+		}
+		
+		private void OnHeaderCellPointerEnter(int columnIndex)
+		{
+			foreach (var rowCells in _contentCells)
+			{
+				var cell = rowCells[columnIndex];
+				cell.AddToClassList("ui-table__column--highlighted");
+			}
+			
+			var headerCell = _headerScrollView.contentContainer[columnIndex];
+			headerCell.AddToClassList("ui-table__column--highlighted");
+		}
+
+		private void OnHeaderCellPointerLeave(int columnIndex)
+		{
+			foreach (var rowCells in _contentCells)
+			{
+				var cell = rowCells[columnIndex];
+				cell.RemoveFromClassList("ui-table__column--highlighted");
+			}
+			
+			var headerCell = _headerScrollView.contentContainer[columnIndex];
+			headerCell.RemoveFromClassList("ui-table__column--highlighted");
+		}
+		
+		private void OnTopLeftCellPointerEnter()
+		{
+			this.AddToClassList("ui-table--highlighted");
+		}
+
+		private void OnTopLeftCellPointerLeave()
+		{
+			this.RemoveFromClassList("ui-table--highlighted");
 		}
 	}
 }
