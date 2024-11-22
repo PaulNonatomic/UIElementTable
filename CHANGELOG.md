@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.0] - Nov 22, 2024
+- Added support for custom styling
+
 ## [0.1.0] - Nov 21, 2024
 - Added support for optional row numbers
 - Added support for flexible row number column width
