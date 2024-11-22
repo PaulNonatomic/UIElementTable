@@ -2,13 +2,42 @@
 
 /* Root UITable element */
 .ui-table {
+    
+    /* Text */
+    --text-color: #ffffff;
+    --header-text-color: var(--text-color);
+    --row-number-text-color: var(--text-color);
+    --row-number-even-text-color: var(--text-color);
+    --row-number-odd-text-color: var(--text-color);
+    
+    /* Background */
+    --header-bg-color: #2a2a2a;
+    --number-column-bg-color:  #2a2a2a;
+    --cell-even-bg-color: #3a3a3a;
+    --cell-odd-bg-color: #4a4a4a;
+    --highlight-bg-color: #5a5a5a;
+    --row-number-even-bg-color: var(--number-column-bg-color);
+    --row-number-odd-bg-color: var(--number-column-bg-color);
+    
+    /* Background Highlighting */
+    --column-highlight-bg-color: var(--highlight-bg-color);
+    --row-highlight-bg-color: var(--highlight-bg-color);
+    --table-highlight-bg-color: var(--highlight-bg-color);
+
+    /* Text Highlighting */
+    --text-highlight-color: var(--text-color);
+    --text-table-highlight-color: var(--text-highlight-color);
+    --text-cell-highlight-color: var(--text-highlight-color);
+    --text-column-highlight-color: var(--text-highlight-color);
+    --text-row-highlight-color: var(--text-highlight-color);
+    
     flex-direction: column;
 }
 
 /* Top row container */
 .ui-table__top-row {
     flex-direction: row;
-    background-color: #2a2a2a;
+    background-color: var(--header-bg-color);
     height:30px;
     flex-shrink: 0;
 }
@@ -20,20 +49,20 @@
 
 /* Even rows */
 .ui-table__row--even {
-    background-color: #3a3a3a;
+    background-color: var(--cell-even-bg-color);
 }
 
 .ui-table__fixed-column--even {
-    background-color: #2a2a2a; 
+    background-color: var(--row-number-even-bg-color); 
 }
 
 /* Odd rows */
 .ui-table__row--odd {
-    background-color: #4a4a4a;
+    background-color: var(--cell-odd-bg-color);
 }
 
 .ui-table__fixed-column--odd {
-    background-color: #2a2a2a; 
+    background-color: var(--row-number-odd-bg-color); 
 }
 
 /* Table cell */
@@ -49,6 +78,7 @@
 .ui-table__header-cell {
     -unity-text-align: middle-center;
     -unity-font-style: bold;
+    color: var(--header-text-color);
     border-color: rgba(0,0,0,0.1);
     border-width: 1px;
 }
@@ -79,6 +109,15 @@
 .ui-table__row-numbers-column {
     flex-direction: column;
     flex-shrink: 0;
+    color: var(--row-number-text-color);
+}
+
+.ui-table__row-numbers-column .ui-table__fixed-column--even {
+    color: var(--row-number-even-text-color);
+}
+
+.ui-table__row-numbers-column .ui-table__fixed-column--odd {
+    color: var(--row-number-odd-text-color);
 }
 
 .ui-table__scrollview-content-column {
@@ -100,19 +139,22 @@
 
 /* Highlighted cell */
 .ui-table__cell--highlighted {
-    background-color: #5a5a5a;
+    background-color: var(--highlight-bg-color);
+    color: var(--text-cell-highlight-color);
 }
 
 /* Highlighted row */
-.ui-table__row--highlighted .ui-table__cell,
-.ui-table__row--highlighted .ui-table__fixed-column--even,
-.ui-table__row--highlighted .ui-table__fixed-column--odd {
-    background-color: #5a5a5a;
-}
+/*.ui-table__row--highlighted .ui-table__cell,*/
+/*.ui-table__row--highlighted .ui-table__fixed-column--even,*/
+/*.ui-table__row--highlighted .ui-table__fixed-column--odd {*/
+/*    background-color: var(--row-highlight-bg-color);*/
+/*    color: var(--text-row-highlight-color);*/
+/*}*/
 
 /* Highlighted column */
 .ui-table__column--highlighted {
-    background-color: #5a5a5a;
+    background-color: var(--column-highlight-bg-color);
+    color: var(--text-column-highlight-color);
 }
 
 /* Highlighted entire table */
@@ -120,21 +162,25 @@
 .ui-table--highlighted .ui-table__header-cell,
 .ui-table--highlighted .ui-table__fixed-column--even,
 .ui-table--highlighted .ui-table__fixed-column--odd {
-    background-color: #5a5a5a;
+    background-color: var(--table-highlight-bg-color);
+    color: var(--text-table-highlight-color);
 }
 
 /* Highlighted row */
-.ui-table__row--highlighted .ui-table__cell {
-    background-color: #5a5a5a;
-}
+/*.ui-table__row--highlighted .ui-table__cell {*/
+/*    background-color: var(--row-highlight-bg-color);*/
+/*    color: var(--text-row-highlight-color);*/
+/*}*/
 
 .ui-table__row--highlighted {
-    background-color: #5a5a5a;
+    background-color: var(--row-highlight-bg-color);
+    color: var(--text-row-highlight-color);
 }
 
 .ui-table__row--highlighted.ui-table__fixed-column--even,
 .ui-table__row--highlighted.ui-table__fixed-column--odd {
-    background-color: #5a5a5a;
+    background-color: var(--row-highlight-bg-color);
+    color: var(--text-row-highlight-color);
 }
 
 

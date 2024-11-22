@@ -57,6 +57,11 @@ namespace Nonatomic.UIElements
 
 			SynchronizeScrolling();
 		}
+		
+		public void SetCustomStyleSheet(StyleSheet styleSheet)
+		{
+			styleSheets.Add(styleSheet);
+		}
 
 		public void SetCellContent(int rowIndex, int columnIndex, VisualElement content)
 		{
