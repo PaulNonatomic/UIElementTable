@@ -28,34 +28,35 @@ namespace Nonatomic.UIElements
 		{
 			_flexibleRowHeights = flexibleRowHeights;
 			_includeRowNumbers = includeRowNumbers;
-			
 			_contentCells = new List<List<VisualElement>>();
 			_rowNumberCells = new List<VisualElement>();
 			_contentRows = new List<VisualElement>();
+
+			var styleSheet = Resources.Load<StyleSheet>("UITable");
 			
-			//Style
-			styleSheets.Add(Resources.Load<StyleSheet>("UITable"));
 			AddToClassList("ui-table");
-
-			// Handle columns being null or empty
-			if (columns == null || columns.Count == 0)
+			SetCustomStyleSheet(styleSheet);
+			CreateTable(columnCount, rowCount, defaultColumnWidth, defaultRowHeight, columns, rowHeights);
+			SynchronizeScrolling();
+		}
+		
+		private void CreateTable(int columns, int rows, float defaultColumnWidth, float defaultRowHeight, List<ColumnDefinition> columnDefinitions = null, Dictionary<int, float> rowHeights = null)
+		{
+			if (columns < 1)
 			{
-				if (columnCount <= 0)
-				{
-					throw new System.ArgumentException("Either columns must be provided, or columnCount must be greater than 0.");
-				}
-
-				// Generate default columns
-				columns = GenerateDefaultColumns(columnCount, defaultColumnWidth);
+				throw new System.ArgumentException("Column count must be greater than 0.");
 			}
 
-			var topRowContainer = CreateTopRow(columns, defaultColumnWidth, defaultRowHeight);
+			if (columnDefinitions == null)
+			{
+				columnDefinitions = GenerateDefaultColumns(columns, defaultColumnWidth);
+			}
+			
+			var topRowContainer = CreateTopRow(columnDefinitions, defaultColumnWidth, defaultRowHeight);
 			Add(topRowContainer);
-
-			var contentRowContainer = CreateContentArea(rowCount, columns, defaultColumnWidth, defaultRowHeight, rowHeights);
+			
+			var contentRowContainer = CreateContentArea(rows, columnDefinitions, defaultColumnWidth, defaultRowHeight, rowHeights);
 			Add(contentRowContainer);
-
-			SynchronizeScrolling();
 		}
 		
 		public void SetCustomStyleSheet(StyleSheet styleSheet)

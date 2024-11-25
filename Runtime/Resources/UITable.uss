@@ -7,14 +7,18 @@
     --text-color: #ffffff;
     --header-text-color: var(--text-color);
     --row-number-text-color: var(--text-color);
-    --row-number-even-text-color: var(--text-color);
-    --row-number-odd-text-color: var(--text-color);
+    --row-number-even-text-color: var( --row-number-text-color);
+    --row-number-odd-text-color: var( --row-number-text-color);
+    
+    --text-style: bold;
+    --header-text-style: var(--text-style);
+    --row-number-text-style: var(--text-style);
     
     /* Background */
     --header-bg-color: #2a2a2a;
     --number-column-bg-color:  #2a2a2a;
-    --cell-even-bg-color: #3a3a3a;
-    --cell-odd-bg-color: #4a4a4a;
+    --row-even-bg-color: #3a3a3a;
+    --row-odd-bg-color: #4a4a4a;
     --highlight-bg-color: #5a5a5a;
     --row-number-even-bg-color: var(--number-column-bg-color);
     --row-number-odd-bg-color: var(--number-column-bg-color);
@@ -23,6 +27,7 @@
     --column-highlight-bg-color: var(--highlight-bg-color);
     --row-highlight-bg-color: var(--highlight-bg-color);
     --table-highlight-bg-color: var(--highlight-bg-color);
+    --cell-highlight-bg-color: var(--highlight-bg-color);
 
     /* Text Highlighting */
     --text-highlight-color: var(--text-color);
@@ -49,7 +54,7 @@
 
 /* Even rows */
 .ui-table__row--even {
-    background-color: var(--cell-even-bg-color);
+    background-color: var(--row-even-bg-color);
 }
 
 .ui-table__fixed-column--even {
@@ -58,7 +63,7 @@
 
 /* Odd rows */
 .ui-table__row--odd {
-    background-color: var(--cell-odd-bg-color);
+    background-color: var(--row-odd-bg-color);
 }
 
 .ui-table__fixed-column--odd {
@@ -77,7 +82,7 @@
 /* Header cell */
 .ui-table__header-cell {
     -unity-text-align: middle-center;
-    -unity-font-style: bold;
+    -unity-font-style: var(--header-text-style);
     color: var(--header-text-color);
     border-color: rgba(0,0,0,0.1);
     border-width: 1px;
@@ -110,6 +115,7 @@
     flex-direction: column;
     flex-shrink: 0;
     color: var(--row-number-text-color);
+    -unity-font-style: var(--row-number-text-style);
 }
 
 .ui-table__row-numbers-column .ui-table__fixed-column--even {
@@ -139,7 +145,7 @@
 
 /* Highlighted cell */
 .ui-table__cell--highlighted {
-    background-color: var(--highlight-bg-color);
+    background-color: var(--cell-highlight-bg-color);
     color: var(--text-cell-highlight-color);
 }
 
