@@ -189,4 +189,15 @@
     color: var(--text-row-highlight-color);
 }
 
+/* Hide row numbers column */
+.ui-table__row-numbers-column--hidden {
+    display: none;
+}
+
+/* Hide top-left corner cell */
+.ui-table__top-left-cell--hidden {
+    display: none;
+}
+
+
 

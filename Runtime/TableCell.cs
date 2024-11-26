@@ -1,22 +1,29 @@
-using UnityEngine.UIElements;
+﻿using UnityEngine.UIElements;
 
 namespace Nonatomic.UIElements
 {
-	public static class TableCell
+	public class TableCell : VisualElement
 	{
-		public static VisualElement Create(string text, float width, float height)
+		public TableCell()
 		{
-			var cell = new VisualElement();
-			cell.AddToClassList("ui-table__cell");
+			AddToClassList("ui-table__cell");
+			RegisterCallback<PointerEnterEvent>(evt => OnCellPointerEnter());
+			RegisterCallback<PointerLeaveEvent>(evt => OnCellPointerLeave());
+		}
 
-			cell.style.width = width;
-			cell.style.height = height;
+		public void SetWidth(float width)
+		{
+			style.width = width;
+		}
+		
+		private void OnCellPointerEnter()
+		{
+			AddToClassList("ui-table__cell--highlighted");
+		}
 
-			var label = new Label(text);
-			label.AddToClassList("ui-table__cell-label");
-
-			cell.Add(label);
-			return cell;
+		private void OnCellPointerLeave()
+		{
+			RemoveFromClassList("ui-table__cell--highlighted");
 		}
 	}
 }
