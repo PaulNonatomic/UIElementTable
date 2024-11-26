@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.3.0] - Nov 26, 2024
+- Simplified UITable API
+
 ## [0.2.0] - Nov 22, 2024
 - Added support for custom styling
 
