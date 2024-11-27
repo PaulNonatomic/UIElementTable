@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.3.1] - Nov 27, 2024
+- Added support for press styling on table cells
+- Separated header cells into their own derived classes for column, row and corner
+- Fix for scroll wheel effect on row numbers and column headers offsetting the scroll positions
+
 ## [0.3.0] - Nov 26, 2024
 - Simplified UITable API
 

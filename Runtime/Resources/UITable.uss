@@ -28,6 +28,9 @@
     --row-highlight-bg-color: var(--highlight-bg-color);
     --table-highlight-bg-color: var(--highlight-bg-color);
     --cell-highlight-bg-color: var(--highlight-bg-color);
+    
+    /* Background Pressed */
+    --cell-down-bg-color: var(--highlight-bg-color);
 
     /* Text Highlighting */
     --text-highlight-color: var(--text-color);
@@ -35,6 +38,10 @@
     --text-cell-highlight-color: var(--text-highlight-color);
     --text-column-highlight-color: var(--text-highlight-color);
     --text-row-highlight-color: var(--text-highlight-color);
+
+    /* Text Pressed */
+    --text-cell-down-color: var(--text-highlight-color);
+    
     
     flex-direction: column;
 }
@@ -139,6 +146,11 @@
 /* Row container inside content ScrollView */
 .ui-table__row {
     flex-direction: row;
+}
+
+.ui-table__cell--down {
+    background-color: var(--cell-down-bg-color);
+    color: var(--text-cell-down-color);
 }
 
 /* Highlighting */

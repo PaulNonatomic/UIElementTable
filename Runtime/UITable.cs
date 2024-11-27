@@ -7,16 +7,13 @@ namespace Nonatomic.UIElements
 	public class UITable : VisualElement
 	{
 		private ScrollView _headerScrollView;
-		private ScrollView _rowNumberColumnScrollView;
-		private ScrollView _contentScrollView;
 		private List<List<VisualElement>> _contentCells;
 		private List<HeaderCell> _rowNumberCells;
 		private List<VisualElement> _contentRows;
 		private List<ColumnDefinition> _columns;
 		private VisualElement _topLeftCornerCell;
-		private VisualElement _rowNumberContainer;
 		private VisualElement _topRowContainer;
-		private VisualElement _contentRowContainer;
+		private TableContentArea _contentArea;
 		private readonly bool _flexibleRowHeights;
 		private bool _includeRowNumbers;
 		
@@ -37,6 +34,7 @@ namespace Nonatomic.UIElements
 			AddToClassList("ui-table");
 			SetCustomStyleSheet(styleSheet);
 			CreateTable(DefaultColumnCount, DefaultRowCount);
+			HideRowNumbers();
 			SynchronizeScrolling();
 		}
 
@@ -75,16 +73,11 @@ namespace Nonatomic.UIElements
 			_topRowContainer = CreateTopRow(columnDefinitions, DefaultColumnWidth, DefaultRowHeight);
 			Add(_topRowContainer);
 
-			_contentRowContainer = CreateContentArea(rowCount, columnDefinitions, DefaultColumnWidth, DefaultRowHeight, rowHeights);
-			Add(_contentRowContainer);
+			_contentArea = CreateContentArea(rowCount, columnDefinitions, DefaultColumnWidth, DefaultRowHeight, rowHeights);
+			Add(_contentArea);
 
 			if (_includeRowNumbers) return;
-			
-			// Hide the row numbers column
-			_rowNumberContainer?.AddToClassList("ui-table__row-numbers-column--hidden");
-
-			// Hide the top-left corner cell
-			_topLeftCornerCell?.AddToClassList("ui-table__top-left-cell--hidden");
+			HideRowNumbers();
 		}
 
 		public void SetCustomStyleSheet(StyleSheet styleSheet)
@@ -192,7 +185,7 @@ namespace Nonatomic.UIElements
 			// Always create the top-left corner cell (row header)
 			var rowNumberColumn = columns[0];
 			var rowNumberWidth = rowNumberColumn.Width ?? defaultColumnWidth;
-			_topLeftCornerCell = new HeaderCell(rowNumberColumn.Label, rowNumberWidth, defaultRowHeight);
+			_topLeftCornerCell = new CornerHeaderCell(rowNumberColumn.Label, rowNumberWidth, defaultRowHeight);
 			_topLeftCornerCell.AddToClassList("ui-table__header-cell");
 
 			// Add pointer event handlers for top-left cell
@@ -204,6 +197,7 @@ namespace Nonatomic.UIElements
 			// Header ScrollView (non-interactive)
 			_headerScrollView = TableScrollView.CreateHorizontal(isInteractive: false, hideHorizontalScrollbar: true);
 			_headerScrollView.contentContainer.AddToClassList("ui-table__scrollview-content-row");
+			_headerScrollView.RegisterCallback<WheelEvent>(HandleHeaderScrollWheel, TrickleDown.TrickleDown);
 			topRowContainer.Add(_headerScrollView);
 
 			// Populate header cells
@@ -211,11 +205,10 @@ namespace Nonatomic.UIElements
 			{
 				var column = columns[i];
 				var columnWidth = column.Width ?? defaultColumnWidth;
-				var headerCell = new HeaderCell(column.Label, columnWidth, defaultRowHeight);
+				var headerCell = new ColumnHeaderCell(column.Label, columnWidth, defaultRowHeight, i);
 				headerCell.AddToClassList("ui-table__header-cell");
 
-				var columnIndex = i - 1; // Adjust index
-
+				var columnIndex = i - 1;
 				headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(columnIndex));
 				headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(columnIndex));
 
@@ -231,95 +224,52 @@ namespace Nonatomic.UIElements
 			// Delay setting the spacer width until layout is ready
 			RegisterCallback<GeometryChangedEvent>((evt) =>
 			{
-				var scrollbarWidth = _contentScrollView?.verticalScroller.resolvedStyle.width ?? 0;
-				spacer.style.width = scrollbarWidth > 0 ? scrollbarWidth : 0f;
+				spacer.style.width = _contentArea.ContentVerticalScrollerWidth;
 			});
 
 			return topRowContainer;
 		}
 
-		private VisualElement CreateContentArea(
+		private void HandleHeaderScrollWheel(WheelEvent evt)
+		{
+			evt.StopImmediatePropagation();
+		}
+
+		private TableContentArea CreateContentArea(
 			int rowCount,
 			List<ColumnDefinition> columns,
 			float defaultColumnWidth,
 			float defaultRowHeight,
 			Dictionary<int, float> rowHeights)
 		{
-			var contentRowContainer = new VisualElement();
-			contentRowContainer.AddToClassList("ui-table__content-row");
+			var tableContent = new TableContentArea();
 
-			// Always create the row number Column ScrollView (non-interactive)
-			_rowNumberContainer = new VisualElement();
-			_rowNumberContainer.AddToClassList("ui-table__row-numbers-column");
-			contentRowContainer.Add(_rowNumberContainer);
-
-			_rowNumberColumnScrollView = TableScrollView.CreateVertical(isInteractive: false, hideVerticalScrollbar: true);
-			_rowNumberColumnScrollView.AddToClassList("ui-table__scrollview-content-column");
-			_rowNumberContainer.Add(_rowNumberColumnScrollView);
-
-			// Add spacer element to account for scrollbar height
-			var spacer = new VisualElement();
-			spacer.style.flexShrink = 0;
-			spacer.style.flexGrow = 0;
-			_rowNumberContainer.Add(spacer);
-
-			// Delay setting the spacer height until layout is ready
-			RegisterCallback<GeometryChangedEvent>((evt) =>
-			{
-				var scrollbarHeight = _contentScrollView?.horizontalScroller.resolvedStyle.height ?? 0;
-				spacer.style.height = scrollbarHeight > 0 ? scrollbarHeight : 0f;
-			});
-
-			// Main Content ScrollView (interactive with visible scrollbars)
-			_contentScrollView = TableScrollView.CreateBoth(isInteractive: true);
-			_contentScrollView.contentContainer.AddToClassList("ui-table__scrollview-content-column");
-			contentRowContainer.Add(_contentScrollView);
-
-			// Populate content cells
 			for (var i = 0; i < rowCount; i++)
 			{
 				AddRowInternal(i, columns, defaultColumnWidth, defaultRowHeight, rowHeights);
 			}
 
-			return contentRowContainer;
+			return tableContent;
 		}
 
 		private void SynchronizeScrolling()
 		{
 			// Synchronize horizontal scrolling
-			_contentScrollView.horizontalScroller.valueChanged += (value) =>
+			_contentArea.ContentScrollView.horizontalScroller.valueChanged += (value) =>
 			{
 				_headerScrollView.scrollOffset = new Vector2(value, _headerScrollView.scrollOffset.y);
 			};
-
-			// Synchronize vertical scrolling
-			_contentScrollView.verticalScroller.valueChanged += (value) =>
-			{
-				_rowNumberColumnScrollView.scrollOffset = new Vector2(_rowNumberColumnScrollView.scrollOffset.x, value);
-			};
-		}
-
-		private void OnCellPointerEnter(VisualElement cell)
-		{
-			cell.AddToClassList("ui-table__cell--highlighted");
-		}
-
-		private void OnCellPointerLeave(VisualElement cell)
-		{
-			cell.RemoveFromClassList("ui-table__cell--highlighted");
 		}
 
 		private void OnRowHeaderPointerEnter(int rowIndex)
 		{
 			_contentRows[rowIndex].AddToClassList("ui-table__row--highlighted");
-
 			_rowNumberCells[rowIndex].AddToClassList("ui-table__row--highlighted");
 		}
 
 		private void OnRowHeaderPointerLeave(int rowIndex)
 		{
 			_contentRows[rowIndex].RemoveFromClassList("ui-table__row--highlighted");
-
 			_rowNumberCells[rowIndex].RemoveFromClassList("ui-table__row--highlighted");
 		}
 
@@ -403,9 +353,8 @@ namespace Nonatomic.UIElements
 				var columnWidth = column.Width ?? defaultColumnWidth;
 				totalRowWidth += columnWidth;
 
-				var cell = new VisualElement();
-				cell.AddToClassList("ui-table__cell");
-				cell.style.width = columnWidth;
+				var cell = new TableCell(j, rowIndex);
+				cell.SetWidth(columnWidth);
 
 				// Set cell height based on flexibleRowHeights
 				if (_flexibleRowHeights)
@@ -422,10 +371,6 @@ namespace Nonatomic.UIElements
 
 				// Adjust columnIndex for event handlers
 				var columnIndex = j - 1;
-
-				// Add pointer event handlers for content cells
-				cell.RegisterCallback<PointerEnterEvent>(evt => OnCellPointerEnter(cell));
-				cell.RegisterCallback<PointerLeaveEvent>(evt => OnCellPointerLeave(cell));
 
 				// Add cell content if provided
 				if (cellContents != null && cellContents.ContainsKey(columnIndex))
@@ -447,15 +392,14 @@ namespace Nonatomic.UIElements
 			_contentCells.Add(contentRowCells);
 
 			// Add row to content scroll view
-			_contentScrollView.contentContainer.Add(row);
+			_contentArea.ContentScrollView.contentContainer.Add(row);
 
 			// Update row numbers
 			var rowNumberWidth = columns[0].Width ?? defaultColumnWidth;
-			var rowNumberCell = new HeaderCell($"{_rowNumberCells.Count + 1}", rowNumberWidth, rowHeight);
+			var rowNumberCell = new RowHeaderCell($"{_rowNumberCells.Count + 1}", rowNumberWidth, rowHeight, rowIndex);
 
 			rowNumberCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(rowIndex));
 			rowNumberCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(rowIndex));
-
 			rowNumberCell.AddToClassList((rowIndex + 1) % 2 == 0 ? "ui-table__fixed-column--even" : "ui-table__fixed-column--odd");
 
 			// Set height based on flexibleRowHeights
@@ -472,7 +416,7 @@ namespace Nonatomic.UIElements
 			}
 
 			_rowNumberCells.Add(rowNumberCell);
-			_rowNumberColumnScrollView.contentContainer.Add(rowNumberCell);
+			_contentArea.RowNumberScrollView.contentContainer.Add(rowNumberCell);
 		}
 
 		// Method to remove a row
@@ -484,12 +428,12 @@ namespace Nonatomic.UIElements
 			}
 
 			// Remove row from UI
-			_contentScrollView.contentContainer.Remove(_contentRows[rowIndex]);
+			_contentArea.RowNumberScrollView.contentContainer.Remove(_contentRows[rowIndex]);
 			_contentRows.RemoveAt(rowIndex);
 			_contentCells.RemoveAt(rowIndex);
 
 			// Remove row number cell
-			_rowNumberColumnScrollView.contentContainer.Remove(_rowNumberCells[rowIndex]);
+			_contentArea.RowNumberScrollView.contentContainer.Remove(_rowNumberCells[rowIndex]);
 			_rowNumberCells.RemoveAt(rowIndex);
 
 			// Update row indices and classes
@@ -537,7 +481,7 @@ namespace Nonatomic.UIElements
 			var columnWidth = columnDefinition.Width ?? 100f;
 			var columnIndex = _columns.Count - 2;
 			
-			var headerCell = new HeaderCell(columnDefinition.Label, columnWidth, 30f);
+			var headerCell = new ColumnHeaderCell(columnDefinition.Label, columnWidth, 30f, columnIndex);
 			headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(columnIndex));
 			headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(columnIndex));
 			_headerScrollView.contentContainer.Add(headerCell);
@@ -546,18 +490,10 @@ namespace Nonatomic.UIElements
 			for (var i = 0; i < _contentRows.Count; i++)
 			{
 				var row = _contentRows[i];
-				var cell = new VisualElement();
-				cell.AddToClassList("ui-table__cell");
-				cell.style.width = columnWidth;
-
-				// Adjust columnIndex for event handlers
-				cell.RegisterCallback<PointerEnterEvent>(evt => OnCellPointerEnter(cell));
-				cell.RegisterCallback<PointerLeaveEvent>(evt => OnCellPointerLeave(cell));
-
-				// Add cell to row
+				var cell = new TableCell(columnIndex, i);
+				cell.SetWidth(columnWidth);
+				
 				row.Add(cell);
-
-				// Add cell to contentCells
 				_contentCells[i].Add(cell);
 			}
 		}
@@ -590,29 +526,28 @@ namespace Nonatomic.UIElements
 		public void ShowRowNumbers(ColumnDefinition columnDefinition = null)
 		{
 			_includeRowNumbers = true;
-			_rowNumberContainer?.RemoveFromClassList("ui-table__row-numbers-column--hidden");
+			_contentArea.ShowRowNumbers();
 			_topLeftCornerCell?.RemoveFromClassList("ui-table__top-left-cell--hidden");
 
-			if (columnDefinition != null)
+			if (columnDefinition == null) return;
+			
+			_columns[0] = columnDefinition;
+			var columnWidth = columnDefinition.Width ?? 100f;
+
+			var header = _topRowContainer.ElementAt(0) as HeaderCell;
+			header.SetLabel(columnDefinition.Label);
+			header.SetWidth(columnWidth);
+
+			foreach (var cell in _rowNumberCells)
 			{
-				_columns[0] = columnDefinition;
-				var columnWidth = columnDefinition.Width ?? 100f;
-
-				var header = _topRowContainer.ElementAt(0) as HeaderCell;
-				header.SetLabel(columnDefinition.Label);
-				header.SetWidth(columnWidth);
-
-				foreach (var cell in _rowNumberCells)
-				{
-					cell.SetWidth(columnWidth);
-				}
+				cell.SetWidth(columnWidth);
 			}
 		}
 		
 		public void HideRowNumbers()
 		{
 			_includeRowNumbers = false;
-			_rowNumberContainer?.AddToClassList("ui-table__row-numbers-column--hidden");
+			_contentArea.HideRowNumbers();
 			_topLeftCornerCell?.AddToClassList("ui-table__top-left-cell--hidden");
 		}
 
