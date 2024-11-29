@@ -8,7 +8,7 @@ namespace Nonatomic.UIElements
 	{
 		private ScrollView _headerScrollView;
 		private List<List<VisualElement>> _contentCells;
-		private List<HeaderCell> _rowNumberCells;
+		private List<RowHeaderCell> _rowNumberCells;
 		private List<VisualElement> _contentRows;
 		private List<ColumnDefinition> _columns;
 		private VisualElement _topLeftCornerCell;
@@ -27,7 +27,7 @@ namespace Nonatomic.UIElements
 			_flexibleRowHeights = false;
 			_includeRowNumbers = false;
 			_contentCells = new List<List<VisualElement>>();
-			_rowNumberCells = new List<HeaderCell>();
+			_rowNumberCells = new List<RowHeaderCell>();
 			_contentRows = new List<VisualElement>();
 
 			var styleSheet = Resources.Load<StyleSheet>("UITable");
@@ -49,7 +49,7 @@ namespace Nonatomic.UIElements
 			_flexibleRowHeights = flexibleRowHeights;
 			_includeRowNumbers = includeRowNumbers;
 			_contentCells = new List<List<VisualElement>>();
-			_rowNumberCells = new List<HeaderCell>();
+			_rowNumberCells = new List<RowHeaderCell>();
 			_contentRows = new List<VisualElement>();
 
 			var styleSheet = Resources.Load<StyleSheet>("UITable");
@@ -123,11 +123,10 @@ namespace Nonatomic.UIElements
 
 		private void UpdateRowHeight(int rowIndex)
 		{
-			if (!_flexibleRowHeights)
-				return;
+			if (!_flexibleRowHeights) return;
 
 			var contentRow = _contentRows[rowIndex];
-			VisualElement rowNumberCell = null;
+			RowHeaderCell rowNumberCell = null;
 
 			if (_includeRowNumbers)
 			{
@@ -154,11 +153,7 @@ namespace Nonatomic.UIElements
 			contentRow.MarkDirtyRepaint();
 
 			// Also apply to the row number column cell if it exists
-			if (rowNumberCell != null)
-			{
-				rowNumberCell.style.height = maxHeight;
-				rowNumberCell.MarkDirtyRepaint();
-			}
+			rowNumberCell?.SetRowHeight(maxHeight, _flexibleRowHeights);
 		}
 
 		private List<ColumnDefinition> GenerateDefaultColumns(int columnCount, float defaultColumnWidth)
@@ -323,25 +318,8 @@ namespace Nonatomic.UIElements
 		{
 			var rowHeight = rowHeights != null && rowHeights.ContainsKey(rowIndex) ? rowHeights[rowIndex] : defaultRowHeight;
 
-			var row = new VisualElement();
-			row.AddToClassList("ui-table__row");
-			row.style.flexDirection = FlexDirection.Row;
-			row.style.flexShrink = 0;
-
-			// Set row height based on flexibleRowHeights
-			if (_flexibleRowHeights)
-			{
-				row.style.minHeight = rowHeight;
-				row.style.height = StyleKeyword.Null;
-			}
-			else
-			{
-				row.style.height = rowHeight;
-				row.style.minHeight = StyleKeyword.Null;
-			}
-
-			// Assign even or odd class
-			row.AddToClassList((rowIndex + 1) % 2 == 0 ? "ui-table__row--even" : "ui-table__row--odd");
+			var row = new Row(rowIndex);
+			row.SetRowHeight(rowHeight, _flexibleRowHeights);
 
 			// Calculate total row width based on column widths
 			var totalRowWidth = 0f;
@@ -355,19 +333,7 @@ namespace Nonatomic.UIElements
 
 				var cell = new TableCell(j, rowIndex);
 				cell.SetWidth(columnWidth);
-
-				// Set cell height based on flexibleRowHeights
-				if (_flexibleRowHeights)
-				{
-					cell.style.minHeight = rowHeight;
-					cell.style.height = StyleKeyword.Null;
-				}
-				else
-				{
-					cell.style.height = rowHeight;
-					cell.style.minHeight = StyleKeyword.Null;
-					cell.style.overflow = Overflow.Hidden;
-				}
+				cell.SetRowHeight(rowHeight, _flexibleRowHeights);
 
 				// Adjust columnIndex for event handlers
 				var columnIndex = j - 1;
@@ -385,7 +351,7 @@ namespace Nonatomic.UIElements
 				contentRowCells.Add(cell);
 			}
 
-			row.style.width = totalRowWidth;
+			row.SetRowWidth(totalRowWidth);
 
 			// Add row to _contentRows and _contentCells
 			_contentRows.Add(row);
@@ -397,23 +363,9 @@ namespace Nonatomic.UIElements
 			// Update row numbers
 			var rowNumberWidth = columns[0].Width ?? defaultColumnWidth;
 			var rowNumberCell = new RowHeaderCell($"{_rowNumberCells.Count + 1}", rowNumberWidth, rowHeight, rowIndex);
-
+			rowNumberCell.SetRowHeight(rowHeight, _flexibleRowHeights);
 			rowNumberCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(rowIndex));
 			rowNumberCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(rowIndex));
-			rowNumberCell.AddToClassList((rowIndex + 1) % 2 == 0 ? "ui-table__fixed-column--even" : "ui-table__fixed-column--odd");
-
-			// Set height based on flexibleRowHeights
-			if (_flexibleRowHeights)
-			{
-				rowNumberCell.style.minHeight = rowHeight;
-				rowNumberCell.style.height = StyleKeyword.Null;
-			}
-			else
-			{
-				rowNumberCell.style.height = rowHeight;
-				rowNumberCell.style.minHeight = StyleKeyword.Null;
-				rowNumberCell.style.overflow = Overflow.Hidden;
-			}
 
 			_rowNumberCells.Add(rowNumberCell);
 			_contentArea.RowNumberScrollView.contentContainer.Add(rowNumberCell);

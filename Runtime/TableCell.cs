@@ -15,19 +15,36 @@ namespace Nonatomic.UIElements
 			RowIndex = rowIndex;
 			
 			AddToClassList("ui-table__cell");
-			RegisterCallback<PointerEnterEvent>(evt => OnCellPointerEnter());
-			RegisterCallback<PointerLeaveEvent>(evt => OnCellPointerLeave());
-			RegisterCallback<PointerDownEvent>(evt => OnCellPointerDown());
-			RegisterCallback<PointerUpEvent>(evt => OnCellPointerUp());
+			RegisterCallback<PointerEnterEvent>(evt => HandleCellPointerEnter());
+			RegisterCallback<PointerLeaveEvent>(evt => HandleCellPointerLeave());
+			RegisterCallback<PointerDownEvent>(evt => HandleCellPointerDown());
+			RegisterCallback<PointerUpEvent>(evt => HandleCellPointerUp());
+		}
+		
+		public void SetRowHeight(float height, bool flexible = false)
+		{
+			if (flexible)
+			{
+				style.minHeight = height;
+				style.height = StyleKeyword.Null;
+			}
+			else
+			{
+				style.height = height;
+				style.minHeight = StyleKeyword.Null;
+				style.overflow = Overflow.Hidden;
+			}
+			
+			MarkDirtyRepaint();
 		}
 
-		private void OnCellPointerUp()
+		private void HandleCellPointerUp()
 		{
 			AddToClassList("ui-table__cell--highlighted");
 			RemoveFromClassList("ui-table__cell--down");
 		}
 
-		private void OnCellPointerDown()
+		private void HandleCellPointerDown()
 		{
 			RemoveFromClassList("ui-table__cell--highlighted");
 			AddToClassList("ui-table__cell--down");
@@ -38,12 +55,12 @@ namespace Nonatomic.UIElements
 			style.width = width;
 		}
 		
-		private void OnCellPointerEnter()
+		private void HandleCellPointerEnter()
 		{
 			AddToClassList("ui-table__cell--highlighted");
 		}
 
-		private void OnCellPointerLeave()
+		private void HandleCellPointerLeave()
 		{
 			RemoveFromClassList("ui-table__cell--highlighted");
 			RemoveFromClassList("ui-table__cell--down");
