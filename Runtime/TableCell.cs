@@ -1,9 +1,8 @@
-﻿using UnityEngine;
-using UnityEngine.UIElements;
+﻿using UnityEngine.UIElements;
 
 namespace Nonatomic.UIElements
 {
-	public class TableCell : VisualElement
+	public class TableCell : VisualElement, IFlexibleRowHeight, IHighlight
 	{
 		public int ColumnIndex { get; private set; }
 		public int RowIndex { get; private set; }
@@ -38,31 +37,43 @@ namespace Nonatomic.UIElements
 			MarkDirtyRepaint();
 		}
 
-		private void HandleCellPointerUp()
+		public void Highlight(bool enabled)
 		{
-			AddToClassList("ui-table__cell--highlighted");
-			RemoveFromClassList("ui-table__cell--down");
-		}
-
-		private void HandleCellPointerDown()
-		{
-			RemoveFromClassList("ui-table__cell--highlighted");
-			AddToClassList("ui-table__cell--down");
+			if (enabled)
+			{
+				AddToClassList("ui-table__cell--highlighted");
+			}
+			else
+			{
+				RemoveFromClassList("ui-table__cell--highlighted");
+			}
 		}
 
 		public void SetWidth(float width)
 		{
 			style.width = width;
 		}
-		
+
+		private void HandleCellPointerUp()
+		{
+			Highlight(enabled: true);
+			RemoveFromClassList("ui-table__cell--down");
+		}
+
+		private void HandleCellPointerDown()
+		{
+			Highlight(enabled: false);
+			AddToClassList("ui-table__cell--down");
+		}
+
 		private void HandleCellPointerEnter()
 		{
-			AddToClassList("ui-table__cell--highlighted");
+			Highlight(enabled: true);
 		}
 
 		private void HandleCellPointerLeave()
 		{
-			RemoveFromClassList("ui-table__cell--highlighted");
+			Highlight(enabled: false);
 			RemoveFromClassList("ui-table__cell--down");
 		}
 	}

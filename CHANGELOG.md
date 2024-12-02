@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.3.2] - Nov 29, 2024
+- Abstracted classes from VisualElements created in the UITable
+
 ## [0.3.1] - Nov 27, 2024
 - Added support for press styling on table cells
 - Separated header cells into their own derived classes for column, row and corner

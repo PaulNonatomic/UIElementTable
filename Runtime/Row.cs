@@ -2,7 +2,7 @@
 
 namespace Nonatomic.UIElements
 {
-	public class Row : VisualElement
+	public class Row : VisualElement, IFlexibleRowHeight
 	{
 		public Row(int rowIndex)
 		{
@@ -13,7 +13,7 @@ namespace Nonatomic.UIElements
 			// Assign even or odd class
 			AddToClassList((rowIndex + 1) % 2 == 0 ? "ui-table__row--even" : "ui-table__row--odd");
 		}
-		
+	
 		public void SetRowHeight(float height, bool flexible = false)
 		{
 			if (flexible)

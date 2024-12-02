@@ -31,6 +31,8 @@
     
     /* Background Pressed */
     --cell-down-bg-color: var(--highlight-bg-color);
+    --row-down-bg-color: var(--row-highlight-bg-color);
+    --column-down-bg-color: var(--column-highlight-bg-color);
 
     /* Text Highlighting */
     --text-highlight-color: var(--text-color);
@@ -41,7 +43,8 @@
 
     /* Text Pressed */
     --text-cell-down-color: var(--text-highlight-color);
-    
+    --text-row-down-color: var(--text-row-highlight-color);
+    --text-column-down-color: var(--text-column-highlight-color);
     
     flex-direction: column;
 }
@@ -125,13 +128,13 @@
     -unity-font-style: var(--row-number-text-style);
 }
 
-.ui-table__row-numbers-column .ui-table__fixed-column--even {
-    color: var(--row-number-even-text-color);
-}
+/*.ui-table__row-numbers-column .ui-table__fixed-column--even {*/
+/*    color: var(--row-number-even-text-color);*/
+/*}*/
 
-.ui-table__row-numbers-column .ui-table__fixed-column--odd {
-    color: var(--row-number-odd-text-color);
-}
+/*.ui-table__row-numbers-column .ui-table__fixed-column--odd {*/
+/*    color: var(--row-number-odd-text-color);*/
+/*}*/
 
 .ui-table__scrollview-content-column {
     flex-direction: column;
@@ -151,6 +154,16 @@
 .ui-table__cell--down {
     background-color: var(--cell-down-bg-color);
     color: var(--text-cell-down-color);
+}
+
+.ui-table__row--down {
+    background-color: var(--row-down-bg-color);
+    color: var(--text-row-down-color);
+}
+
+.ui-table__column--down {
+    background-color: var(--column-down-bg-color);
+    color: var(--text-column-down-color);
 }
 
 /* Highlighting */

@@ -2,18 +2,21 @@
 
 namespace Nonatomic.UIElements
 {
-	public class RowHeaderCell : HeaderCell
+	public class RowHeaderCell : HeaderCell, IFlexibleRowHeight, IHighlight
 	{
 		public int RowIndex { get; private set; }
-		
+
 		public RowHeaderCell(string text, float width, float height, int rowIndex) : base(text, width, height)
 		{
 			name = $"RowHeader_{rowIndex+1}";
 			RowIndex = rowIndex;
 			
-			RegisterCallback<PointerEnterEvent>(evt => HandleRowHeaderPointerEnter(rowIndex));
-			RegisterCallback<PointerLeaveEvent>(evt => HandleRowHeaderPointerLeave(rowIndex));
 			AddToClassList((rowIndex + 1) % 2 == 0 ? "ui-table__fixed-column--even" : "ui-table__fixed-column--odd");
+			
+			RegisterCallback<PointerEnterEvent>(evt => HandleCellPointerEnter());
+			RegisterCallback<PointerLeaveEvent>(evt => HandleCellPointerLeave());
+			RegisterCallback<PointerDownEvent>(evt => HandleCellPointerDown());
+			RegisterCallback<PointerUpEvent>(evt => HandleCellPointerUp());
 		}
 
 		public void SetRowHeight(float height, bool flexible = false)
@@ -32,15 +35,40 @@ namespace Nonatomic.UIElements
 			
 			MarkDirtyRepaint();
 		}
-
-		private void HandleRowHeaderPointerLeave(int rowIndex)
+		
+		public void Highlight(bool enabled)
 		{
-			//...
+			if (enabled)
+			{
+				AddToClassList("ui-table__row--highlighted");
+			}
+			else
+			{
+				RemoveFromClassList("ui-table__row--highlighted");
+			}
 		}
 
-		private void HandleRowHeaderPointerEnter(int rowIndex)
+		private void HandleCellPointerUp()
 		{
-			//...
+			Highlight(enabled: true);
+			RemoveFromClassList("ui-table__row--down");
+		}
+
+		private void HandleCellPointerDown()
+		{
+			Highlight(enabled: false);
+			AddToClassList("ui-table__row--down");
+		}
+
+		private void HandleCellPointerLeave()
+		{
+			Highlight(enabled: false);
+			RemoveFromClassList("ui-table__row--down");
+		}
+
+		private void HandleCellPointerEnter()
+		{
+			Highlight(enabled: true);
 		}
 	}
 }

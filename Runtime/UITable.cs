@@ -259,13 +259,11 @@ namespace Nonatomic.UIElements
 		private void OnRowHeaderPointerEnter(int rowIndex)
 		{
 			_contentRows[rowIndex].AddToClassList("ui-table__row--highlighted");
-			_rowNumberCells[rowIndex].AddToClassList("ui-table__row--highlighted");
 		}
 
 		private void OnRowHeaderPointerLeave(int rowIndex)
 		{
 			_contentRows[rowIndex].RemoveFromClassList("ui-table__row--highlighted");
-			_rowNumberCells[rowIndex].RemoveFromClassList("ui-table__row--highlighted");
 		}
 
 		private void OnHeaderCellPointerEnter(int columnIndex)
@@ -276,10 +274,6 @@ namespace Nonatomic.UIElements
 				var cell = rowCells[columnIndex];
 				cell.AddToClassList("ui-table__column--highlighted");
 			}
-
-			// Also highlight the header cell
-			var headerCell = _headerScrollView.contentContainer[columnIndex];
-			headerCell.AddToClassList("ui-table__column--highlighted");
 		}
 
 		private void OnHeaderCellPointerLeave(int columnIndex)
@@ -290,10 +284,6 @@ namespace Nonatomic.UIElements
 				var cell = rowCells[columnIndex];
 				cell.RemoveFromClassList("ui-table__column--highlighted");
 			}
-
-			// Also remove highlight from the header cell
-			var headerCell = _headerScrollView.contentContainer[columnIndex];
-			headerCell.RemoveFromClassList("ui-table__column--highlighted");
 		}
 
 		private void OnTopLeftCellPointerEnter()
