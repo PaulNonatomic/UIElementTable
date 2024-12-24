@@ -1,4 +1,6 @@
-﻿using UnityEngine.UIElements;
+﻿using System;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Nonatomic.UIElements
 {
@@ -8,15 +10,16 @@ namespace Nonatomic.UIElements
 		
 		public ColumnHeaderCell(string text, float width, float height, int columnIndex) : base(text, width, height)
 		{
-			name = $"ColumnHeader_{columnIndex}";
-			ColumnIndex = columnIndex;
+			Debug.Log($"ColumnIndex: {columnIndex-1}");
+			name = $"ColumnHeader_{columnIndex-1}";
+			ColumnIndex = columnIndex-1;
 			
 			RegisterCallback<PointerEnterEvent>(evt => HandleCellPointerEnter());
 			RegisterCallback<PointerLeaveEvent>(evt => HandleCellPointerLeave());
 			RegisterCallback<PointerDownEvent>(evt => HandleCellPointerDown());
 			RegisterCallback<PointerUpEvent>(evt => HandleCellPointerUp());
 		}
-		
+
 		public void Highlight(bool enabled)
 		{
 			if (enabled)

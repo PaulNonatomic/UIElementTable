@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Nonatomic.UIElements.Events;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -203,9 +205,10 @@ namespace Nonatomic.UIElements
 				var headerCell = new ColumnHeaderCell(column.Label, columnWidth, defaultRowHeight, i);
 				headerCell.AddToClassList("ui-table__header-cell");
 
-				var columnIndex = i - 1;
-				headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(columnIndex));
-				headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(columnIndex));
+				var index = i-1;
+				headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(index));
+				headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(index));
+				headerCell.RegisterCallback<ClickEvent>(evt => HandleColumnHeaderClick(headerCell));
 
 				_headerScrollView.contentContainer.Add(headerCell);
 			}
@@ -268,6 +271,12 @@ namespace Nonatomic.UIElements
 
 		private void OnHeaderCellPointerEnter(int columnIndex)
 		{
+			if(columnIndex < 0 || columnIndex >= _contentCells[0].Count)
+			{
+				Debug.LogError($"OnHeaderCellPointerEnter: Column index out of range: {columnIndex}/{_contentCells[0].Count}");
+				return;
+			}
+			
 			// Highlight all cells in the column
 			foreach (var rowCells in _contentCells)
 			{
@@ -278,6 +287,12 @@ namespace Nonatomic.UIElements
 
 		private void OnHeaderCellPointerLeave(int columnIndex)
 		{
+			if(columnIndex < 0 || columnIndex >= _contentCells[0].Count)
+			{
+				Debug.LogError($"OnHeaderCellPointerLeave: Column index out of range: {columnIndex}/{_contentCells[0].Count}");
+				return;
+			}
+			
 			// Remove highlight from all cells in the column
 			foreach (var rowCells in _contentCells)
 			{
@@ -288,15 +303,16 @@ namespace Nonatomic.UIElements
 
 		private void OnTopLeftCellPointerEnter()
 		{
-			this.AddToClassList("ui-table--highlighted");
+			AddToClassList("ui-table--highlighted");
 		}
 
 		private void OnTopLeftCellPointerLeave()
 		{
-			this.RemoveFromClassList("ui-table--highlighted");
+			RemoveFromClassList("ui-table--highlighted");
 		}
 
 		// Method to add a new row
+
 		public void AddRow(Dictionary<int, VisualElement> cellContents = null)
 		{
 			var rowIndex = _contentRows.Count;
@@ -321,12 +337,13 @@ namespace Nonatomic.UIElements
 				var columnWidth = column.Width ?? defaultColumnWidth;
 				totalRowWidth += columnWidth;
 
-				var cell = new TableCell(j, rowIndex);
-				cell.SetWidth(columnWidth);
-				cell.SetRowHeight(rowHeight, _flexibleRowHeights);
-
 				// Adjust columnIndex for event handlers
 				var columnIndex = j - 1;
+				
+				var cell = new TableCell(columnIndex, rowIndex);
+				cell.SetWidth(columnWidth);
+				cell.SetRowHeight(rowHeight, _flexibleRowHeights);
+				cell.RegisterCallback<ClickEvent>(evt => HandleTableCellClick(cell));
 
 				// Add cell content if provided
 				if (cellContents != null && cellContents.ContainsKey(columnIndex))
@@ -356,12 +373,15 @@ namespace Nonatomic.UIElements
 			rowNumberCell.SetRowHeight(rowHeight, _flexibleRowHeights);
 			rowNumberCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(rowIndex));
 			rowNumberCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(rowIndex));
-
+			rowNumberCell.RegisterCallback<ClickEvent>(evt => HandleRowHeaderClick(rowNumberCell));
+			
 			_rowNumberCells.Add(rowNumberCell);
 			_contentArea.RowNumberScrollView.contentContainer.Add(rowNumberCell);
 		}
 
+
 		// Method to remove a row
+
 		public void RemoveRow(int rowIndex)
 		{
 			if (rowIndex < 0 || rowIndex >= _contentRows.Count)
@@ -421,11 +441,12 @@ namespace Nonatomic.UIElements
 
 			// Add header cell
 			var columnWidth = columnDefinition.Width ?? 100f;
-			var columnIndex = _columns.Count - 2;
+			var columnIndex = _columns.Count - 1;
 			
 			var headerCell = new ColumnHeaderCell(columnDefinition.Label, columnWidth, 30f, columnIndex);
-			headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(columnIndex));
-			headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(columnIndex));
+			headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(columnIndex-1));
+			headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(columnIndex-1));
+			headerCell.RegisterCallback<ClickEvent>(evt => HandleColumnHeaderClick(headerCell));
 			_headerScrollView.contentContainer.Add(headerCell);
 
 			// Add cells to each row
@@ -433,6 +454,7 @@ namespace Nonatomic.UIElements
 			{
 				var row = _contentRows[i];
 				var cell = new TableCell(columnIndex, i);
+				cell.RegisterCallback<ClickEvent>(evt => HandleTableCellClick(cell));
 				cell.SetWidth(columnWidth);
 				
 				row.Add(cell);
@@ -440,7 +462,9 @@ namespace Nonatomic.UIElements
 			}
 		}
 
+
 		// Method to remove a column
+
 		public void RemoveColumn(int columnIndex)
 		{
 			if (columnIndex < 0 || columnIndex >= _columns.Count - 1)
@@ -464,7 +488,9 @@ namespace Nonatomic.UIElements
 			UpdateRowWidths();
 		}
 
+
 		// Method to show row numbers column
+
 		public void ShowRowNumbers(ColumnDefinition columnDefinition = null)
 		{
 			_includeRowNumbers = true;
@@ -485,7 +511,7 @@ namespace Nonatomic.UIElements
 				cell.SetWidth(columnWidth);
 			}
 		}
-		
+
 		public void HideRowNumbers()
 		{
 			_includeRowNumbers = false;
@@ -510,6 +536,27 @@ namespace Nonatomic.UIElements
 			{
 				row.style.width = totalRowWidth;
 			}
+		}
+
+		private void HandleColumnHeaderClick(ColumnHeaderCell headerCell)
+		{
+			var evt = ColumnHeaderClickEvent.GetPooled(headerCell.ColumnIndex);
+			evt.target = this;
+			SendEvent(evt);
+		}
+
+		private void HandleRowHeaderClick(RowHeaderCell rowNumberCell)
+		{
+			var evt = RowHeaderClickEvent.GetPooled(rowNumberCell.RowIndex);
+			evt.target = this;
+			SendEvent(evt);
+		}
+
+		private void HandleTableCellClick(TableCell cell)
+		{
+			var evt = TableCellClickEvent.GetPooled(cell.ColumnIndex, cell.RowIndex);
+			evt.target = this;
+			SendEvent(evt);
 		}
 	}
 }
