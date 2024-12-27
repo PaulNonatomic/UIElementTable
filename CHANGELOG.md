@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.0] - Dec 27, 2024
+- Added support for custom cell content with data binding
+
 ## [0.3.2] - Nov 29, 2024
 - Abstracted classes from VisualElements created in the UITable
 

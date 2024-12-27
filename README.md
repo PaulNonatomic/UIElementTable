@@ -8,33 +8,61 @@ To install UIElement Table into your Unity project, add the package from the git
 
 ## Usage
 ```csharp
-// Create a new UITable with the default constructor
-var table = new UITable();
-table.ShowRowNumbers(new ColumnDefinition("#", width: 50f));
-table.SetColumn(0, new ColumnDefinition("Name", 150f));
-table.SetColumn(1, new ColumnDefinition("Age", 75f));
-table.SetColumn(2, new ColumnDefinition("Country"));
-table.SetCustomStyleSheet(Resources.Load<StyleSheet>("CustomTable"));
-rootVisualElement.Add(table);
+// Create a table
+_table = new DataBindingUITable<Person>();
+rootVisualElement.Add(_table);
 
-// Add some rows with content
-AddPerson("Alice", "30", "USA");
-AddPerson("Bob", "25", "Canada");
-AddPerson("Charlie", "35", "UK");
+// Style the table
+var styleSheet = Resources.Load<StyleSheet>("CustomTable");
+_table.SetCustomStyleSheet(styleSheet);
 
-// Cell content is provided as a dictionary of column index to VisualElement
-private void AddPerson(string name, string age, string country)
+// Show row numbers (optional)
+_table.ShowRowNumbers(new ColumnDefinition("#", 50f));
+
+// Define columns using AddColumn with a cell creation func
+_table.AddColumn(
+    new ColumnDefinition("Name", 150f),
+    person => new Label(person.Name)
+);
+_table.AddColumn(
+    new ColumnDefinition("Age", 75f),
+    person => new Label(person.Age.ToString())
+);
+_table.AddColumn(
+    new ColumnDefinition("Country"),
+    person => new Label(person.Country)
+);
+
+// Listen for cell clicks
+_table.RegisterCallback<TableCellClickEvent>(evt =>
 {
-    var cellContents = new Dictionary<int, VisualElement>
-    {
-        { 0, new Label(name) },
-        { 1, new Label(age) },
-        { 2, new Label(country) }
-    };
+    var cell = _table.GetCell(evt.ColumnIndex, evt.RowIndex);
+    var label = cell.Q<Label>();
+    Debug.Log($"Clicked on cell: Column={evt.ColumnIndex}, Row={evt.RowIndex}, Value={label.text}");
+});
 
-    _table.AddRow(cellContents);
+// Populate the table with data
+var people = new List<Person>
+{
+    new Person("Alice", 30, "USA"),
+    new Person("Bob", 25, "Canada"),
+    new Person("Charlie", 35, "UK")
+};
+_table.SetData(people);
+
+public class Person
+{
+	public string Name;
+	public int Age;
+	public string Country;
+
+	public Person(string name, int age, string country)
+	{
+		Name = name;
+		Age = age;
+		Country = country;
+	}
 }
 ```
 
-https://github.com/user-attachments/assets/ffc5bd06-1fdf-47f2-bb9f-8f13654c4ff3
 
