@@ -1,6 +1,6 @@
 ﻿using UnityEngine.UIElements;
 
-namespace Nonatomic.UIElements
+namespace Nonatomic.UIElements.TableElements
 {
 	public class RowHeaderCell : HeaderCell, IFlexibleRowHeight, IHighlight
 	{

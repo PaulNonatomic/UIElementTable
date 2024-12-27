@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Nonatomic.UIElements.Events;
+using Nonatomic.UIElements.TableElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Nonatomic.UIElements
 {
+	/// <summary>
+	/// Represents a customizable table component for use in Unity's UIElements framework.
+	/// </summary>
 	public class UITable : VisualElement
 	{
 		private ScrollView _headerScrollView;
-		private List<List<VisualElement>> _contentCells;
-		private List<RowHeaderCell> _rowNumberCells;
-		private List<VisualElement> _contentRows;
+		private List<List<VisualElement>> _contentCells = new();
+		private List<RowHeaderCell> _rowNumberCells = new();
+		private List<VisualElement> _contentRows = new();
 		private List<ColumnDefinition> _columns;
 		private VisualElement _topLeftCornerCell;
 		private VisualElement _topRowContainer;
@@ -22,15 +27,20 @@ namespace Nonatomic.UIElements
 		private const float DefaultColumnWidth = 100;
 		private const float DefaultRowHeight = 30;
 		private const int DefaultRowCount = 0;
-		private const int DefaultColumnCount = 2;
+		private const int DefaultColumnCount = 0;
 
+		public int RowCount => _contentCells.Count;
+		public int ColumnCount => _contentCells.Count == 0 ? 0 : _contentCells[0].Count;
+
+		/// <summary>
+		/// Represents a customizable table component for creating and managing grid-like layouts in Unity's UIElements framework.
+		/// Allows for defining rows and columns, setting custom cell content, customizing display properties, and handling
+		/// flexible row heights and row numbers for advanced table behavior.
+		/// </summary>
 		public UITable()
 		{
 			_flexibleRowHeights = false;
 			_includeRowNumbers = false;
-			_contentCells = new List<List<VisualElement>>();
-			_rowNumberCells = new List<RowHeaderCell>();
-			_contentRows = new List<VisualElement>();
 
 			var styleSheet = Resources.Load<StyleSheet>("UITable");
 			AddToClassList("ui-table");
@@ -40,6 +50,11 @@ namespace Nonatomic.UIElements
 			SynchronizeScrolling();
 		}
 
+		/// <summary>
+		/// Represents a customizable table component for creating and managing grid-like layouts in Unity's UIElements framework.
+		/// Supports functionalities such as dynamic row and column management, content customization, flexible row heights, and optional row numbering.
+		/// Provides synchronization of scrolling and enables styling through a custom stylesheet.
+		/// </summary
 		public UITable(
 			int rowCount,
 			int columnCount = 0,
@@ -50,53 +65,104 @@ namespace Nonatomic.UIElements
 		{
 			_flexibleRowHeights = flexibleRowHeights;
 			_includeRowNumbers = includeRowNumbers;
-			_contentCells = new List<List<VisualElement>>();
-			_rowNumberCells = new List<RowHeaderCell>();
-			_contentRows = new List<VisualElement>();
 
 			var styleSheet = Resources.Load<StyleSheet>("UITable");
-
 			AddToClassList("ui-table");
 			SetCustomStyleSheet(styleSheet);
 			CreateTable(columnCount, rowCount, columns, rowHeights);
 			SynchronizeScrolling();
 		}
 
-		private void CreateTable(int columnCount, int rowCount, List<ColumnDefinition> columnDefinitions = null, Dictionary<int, float> rowHeights = null)
-		{
-			if (columnCount < 1)
-			{
-				throw new System.ArgumentException("Column count must be greater than 0.");
-			}
-
-			columnDefinitions ??= GenerateDefaultColumns(columnCount, DefaultColumnWidth);
-			_columns = columnDefinitions;
-
-			_topRowContainer = CreateTopRow(columnDefinitions, DefaultColumnWidth, DefaultRowHeight);
-			Add(_topRowContainer);
-
-			_contentArea = CreateContentArea(rowCount, columnDefinitions, DefaultColumnWidth, DefaultRowHeight, rowHeights);
-			Add(_contentArea);
-
-			if (_includeRowNumbers) return;
-			HideRowNumbers();
-		}
-
+		/// <summary>
+		/// Applies a custom style sheet to the UITable, allowing for additional customization of the visuals.
+		/// </summary>
+		/// <param name="styleSheet">The style sheet to be applied to the UITable.</param>
 		public void SetCustomStyleSheet(StyleSheet styleSheet)
 		{
 			styleSheets.Add(styleSheet);
 		}
 
-		public void SetCellContent(int rowIndex, int columnIndex, VisualElement content)
+		/// <summary>
+		/// Retrieves the cell located at the specified column and row indices in the table.
+		/// </summary>
+		/// <param name="columnIndex">The zero-based index of the column containing the desired cell.</param>
+		/// <param name="rowIndex">The zero-based index of the row containing the desired cell.</param>
+		/// <returns>The <see cref="VisualElement"/> representing the cell at the given position.</returns>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// Thrown when the provided columnIndex or rowIndex is outside the valid range of the table.
+		/// </exception>
+		public VisualElement GetCell(int columnIndex, int rowIndex)
 		{
 			if (rowIndex < 0 || rowIndex >= _contentCells.Count)
 			{
-				throw new System.ArgumentOutOfRangeException(nameof(rowIndex));
+				throw new ArgumentOutOfRangeException(nameof(rowIndex), $"Row index {rowIndex} is out of range. Valid range: 0 to {_contentCells.Count - 1}.");
 			}
 
 			if (columnIndex < 0 || columnIndex >= _contentCells[rowIndex].Count)
 			{
-				throw new System.ArgumentOutOfRangeException(nameof(columnIndex));
+				throw new ArgumentOutOfRangeException(nameof(columnIndex), $"Column index {columnIndex} is out of range. Valid range: 0 to {_contentCells[rowIndex].Count - 1}.");
+			}
+
+			// Retrieve and return the cell
+			return _contentCells[rowIndex][columnIndex];
+		}
+
+		/// <summary>
+		/// Retrieves a specific row of cells from the table by its index.
+		/// </summary>
+		/// <param name="rowIndex">The zero-based index of the row to retrieve.</param>
+		/// <returns>A list of <see cref="VisualElement"/> objects representing the cells in the specified row.</returns>
+		/// <exception cref="InvalidOperationException">Thrown when there are no rows in the table.</exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// Thrown if the provided <paramref name="rowIndex"/> is less than zero or exceeds the total row count.
+		/// </exception>
+		public List<VisualElement> GetRow(int rowIndex)
+		{
+			if (_contentCells.Count == 0)
+			{
+				throw new InvalidOperationException("There are no rows in the table.");
+			}
+
+			if (rowIndex < 0 || rowIndex >= _contentCells.Count)
+			{
+				throw new ArgumentOutOfRangeException(nameof(rowIndex));
+			}
+			
+			return _contentCells[rowIndex];
+		}
+
+		/// <summary>
+		/// Retrieves all the cells within a specific column in the table.
+		/// </summary>
+		/// <param name="columnIndex">The index of the column to retrieve cells from. Must be a non-negative integer less than the total column count.</param>
+		/// <returns>A list of <see cref="VisualElement"/> objects representing the cells in the specified column.</returns>
+		/// <exception cref="InvalidOperationException">Thrown when there are no rows in the table.</exception>
+		/// <exception cref="ArgumentOutOfRangeException">Thrown when the specified column index is out of range.</exception>
+		public List<VisualElement> GetColumn(int columnIndex)
+		{
+			if (_contentCells.Count == 0)
+			{
+				throw new InvalidOperationException("There are no rows in the table.");
+			}
+
+			if (columnIndex < 0 || columnIndex >= _contentCells[0].Count)
+			{
+				throw new ArgumentOutOfRangeException(nameof(columnIndex));
+			}
+
+			return _contentCells.Select(t => t[columnIndex]).ToList();
+		}
+	
+		public void SetCell(int rowIndex, int columnIndex, VisualElement content)
+		{
+			if (rowIndex < 0 || rowIndex >= _contentCells.Count)
+			{
+				throw new ArgumentOutOfRangeException(nameof(rowIndex));
+			}
+
+			if (columnIndex < 0 || columnIndex >= _contentCells[rowIndex].Count)
+			{
+				throw new ArgumentOutOfRangeException(nameof(columnIndex));
 			}
 
 			var cell = _contentCells[rowIndex][columnIndex];
@@ -121,6 +187,21 @@ namespace Nonatomic.UIElements
 			{
 				UpdateRowHeight(i);
 			}
+		}
+
+		private void CreateTable(int columnCount, int rowCount, List<ColumnDefinition> columnDefinitions = null, Dictionary<int, float> rowHeights = null)
+		{
+			columnDefinitions ??= GenerateDefaultColumns(columnCount, DefaultColumnWidth);
+			_columns = columnDefinitions;
+
+			_topRowContainer = CreateTopRow(columnDefinitions, DefaultColumnWidth, DefaultRowHeight);
+			Add(_topRowContainer);
+
+			_contentArea = CreateContentArea(rowCount, columnDefinitions, DefaultColumnWidth, DefaultRowHeight, rowHeights);
+			Add(_contentArea);
+
+			if (_includeRowNumbers) return;
+			HideRowNumbers();
 		}
 
 		private void UpdateRowHeight(int rowIndex)
@@ -273,8 +354,7 @@ namespace Nonatomic.UIElements
 		{
 			if(columnIndex < 0 || columnIndex >= _contentCells[0].Count)
 			{
-				Debug.LogError($"OnHeaderCellPointerEnter: Column index out of range: {columnIndex}/{_contentCells[0].Count}");
-				return;
+				throw new ArgumentOutOfRangeException(nameof(columnIndex), $"Column index {columnIndex} is out of range. Valid range: 0 to {_contentCells[0].Count - 1}.");
 			}
 			
 			// Highlight all cells in the column
@@ -289,8 +369,7 @@ namespace Nonatomic.UIElements
 		{
 			if(columnIndex < 0 || columnIndex >= _contentCells[0].Count)
 			{
-				Debug.LogError($"OnHeaderCellPointerLeave: Column index out of range: {columnIndex}/{_contentCells[0].Count}");
-				return;
+				throw new ArgumentOutOfRangeException(nameof(columnIndex), $"Column index {columnIndex} is out of range. Valid range: 0 to {_contentCells[0].Count - 1}.");
 			}
 			
 			// Remove highlight from all cells in the column
@@ -312,7 +391,6 @@ namespace Nonatomic.UIElements
 		}
 
 		// Method to add a new row
-
 		public void AddRow(Dictionary<int, VisualElement> cellContents = null)
 		{
 			var rowIndex = _contentRows.Count;

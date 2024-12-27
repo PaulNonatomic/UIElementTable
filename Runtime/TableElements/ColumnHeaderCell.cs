@@ -1,8 +1,6 @@
-﻿using System;
-using UnityEngine;
-using UnityEngine.UIElements;
+﻿using UnityEngine.UIElements;
 
-namespace Nonatomic.UIElements
+namespace Nonatomic.UIElements.TableElements
 {
 	public class ColumnHeaderCell : HeaderCell
 	{
@@ -10,7 +8,6 @@ namespace Nonatomic.UIElements
 		
 		public ColumnHeaderCell(string text, float width, float height, int columnIndex) : base(text, width, height)
 		{
-			Debug.Log($"ColumnIndex: {columnIndex-1}");
 			name = $"ColumnHeader_{columnIndex-1}";
 			ColumnIndex = columnIndex-1;
 			

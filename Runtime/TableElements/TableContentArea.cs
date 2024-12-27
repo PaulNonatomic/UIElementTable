@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Nonatomic.UIElements
+namespace Nonatomic.UIElements.TableElements
 {
 	public class TableContentArea : VisualElement
 	{
