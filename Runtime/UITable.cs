@@ -321,14 +321,14 @@ namespace Nonatomic.UIElements
 			float defaultRowHeight,
 			Dictionary<int, float> rowHeights)
 		{
-			var tableContent = new TableContentArea();
+			_contentArea = new TableContentArea();
 
 			for (var i = 0; i < rowCount; i++)
 			{
 				AddRowInternal(i, columns, defaultColumnWidth, defaultRowHeight, rowHeights);
 			}
 
-			return tableContent;
+			return _contentArea;
 		}
 
 		private void SynchronizeScrolling()
@@ -468,12 +468,23 @@ namespace Nonatomic.UIElements
 			}
 
 			// Remove row from UI
-			_contentArea.RowNumberScrollView.contentContainer.Remove(_contentRows[rowIndex]);
+			var row = _contentRows[rowIndex];
+			var content = _contentArea.RowNumberScrollView.contentContainer;
+
+			if (content.Contains(row))
+			{
+				content.Remove(row);
+			}
+			
 			_contentRows.RemoveAt(rowIndex);
 			_contentCells.RemoveAt(rowIndex);
 
 			// Remove row number cell
-			_contentArea.RowNumberScrollView.contentContainer.Remove(_rowNumberCells[rowIndex]);
+			var rowNum = _rowNumberCells[rowIndex];
+			if (content.Contains(rowNum))
+			{
+				content.Remove(rowNum);
+			}
 			_rowNumberCells.RemoveAt(rowIndex);
 
 			// Update row indices and classes

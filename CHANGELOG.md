@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.1] - Dec 27, 2024
+- Fix for the class scoped content area being set after an attempt to create rows that uses the class scoped content area.
+
 ## [0.4.0] - Dec 27, 2024
 - Added support for custom cell content with data binding
 

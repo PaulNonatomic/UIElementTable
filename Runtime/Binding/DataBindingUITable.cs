@@ -9,6 +9,28 @@ namespace Nonatomic.UIElements.Binding
 		private readonly List<ColumnBinder<T>> _columnBinders = new List<ColumnBinder<T>>();
 		private IEnumerable<T> _data;
 
+		public DataBindingUITable() 
+		{
+			
+		}
+
+		public DataBindingUITable(
+			int rowCount,
+			int columnCount = 0,
+			List<ColumnDefinition> columns = null,
+			Dictionary<int, float> rowHeights = null,
+			bool flexibleRowHeights = false,
+			bool includeRowNumbers = true) : base(
+			rowCount, 
+			columnCount, 
+			columns, 
+			rowHeights, 
+			flexibleRowHeights, 
+			includeRowNumbers)
+		{
+			
+		}
+
 		public void AddColumn(
 			ColumnDefinition columnDefinition,
 			Func<T, VisualElement> cellCreator)
