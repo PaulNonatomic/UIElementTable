@@ -4,7 +4,22 @@
 UIElement Table is a Unity package that provides a way to draw tables with UIElements.
 
 ## Installation
-To install UIElement Table into your Unity project, add the package from the git URL: https://github.com/PaulNonatomic/UIElementTable.git using the Unity package manager.
+
+Add **UIElement Table** to your Unity project via Package Manager:
+
+1. Open **Window > Package Manager**
+2. Click **+** > **Add package from git URL**
+3. Enter:
+```
+https://www.pkglnk.dev/uitable.git
+```
+
+[![pkglnk](https://www.pkglnk.dev/card/uitable.svg)](https://www.pkglnk.dev/pkg/uitable)
+
+## Support
+If you like my work then please consider showing your support by buying me a brew
+<br><br>
+<a href="https://www.buymeacoffee.com/nonatomic" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-green.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
 ## Usage
 ```csharp
