@@ -352,11 +352,9 @@ namespace Nonatomic.UIElements
 
 		private void OnHeaderCellPointerEnter(int columnIndex)
 		{
-			if(columnIndex < 0 || columnIndex >= _contentCells[0].Count)
-			{
-				throw new ArgumentOutOfRangeException(nameof(columnIndex), $"Column index {columnIndex} is out of range. Valid range: 0 to {_contentCells[0].Count - 1}.");
-			}
-			
+			if (_contentCells.Count == 0) return;
+			if (columnIndex < 0 || columnIndex >= _contentCells[0].Count) return;
+
 			// Highlight all cells in the column
 			foreach (var rowCells in _contentCells)
 			{
@@ -367,11 +365,9 @@ namespace Nonatomic.UIElements
 
 		private void OnHeaderCellPointerLeave(int columnIndex)
 		{
-			if(columnIndex < 0 || columnIndex >= _contentCells[0].Count)
-			{
-				throw new ArgumentOutOfRangeException(nameof(columnIndex), $"Column index {columnIndex} is out of range. Valid range: 0 to {_contentCells[0].Count - 1}.");
-			}
-			
+			if (_contentCells.Count == 0) return;
+			if (columnIndex < 0 || columnIndex >= _contentCells[0].Count) return;
+
 			// Remove highlight from all cells in the column
 			foreach (var rowCells in _contentCells)
 			{
@@ -449,8 +445,8 @@ namespace Nonatomic.UIElements
 			var rowNumberWidth = columns[0].Width ?? defaultColumnWidth;
 			var rowNumberCell = new RowHeaderCell($"{_rowNumberCells.Count + 1}", rowNumberWidth, rowHeight, rowIndex);
 			rowNumberCell.SetRowHeight(rowHeight, _flexibleRowHeights);
-			rowNumberCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(rowIndex));
-			rowNumberCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(rowIndex));
+			rowNumberCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(rowNumberCell.RowIndex));
+			rowNumberCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(rowNumberCell.RowIndex));
 			rowNumberCell.RegisterCallback<ClickEvent>(evt => HandleRowHeaderClick(rowNumberCell));
 			
 			_rowNumberCells.Add(rowNumberCell);
@@ -464,30 +460,30 @@ namespace Nonatomic.UIElements
 		{
 			if (rowIndex < 0 || rowIndex >= _contentRows.Count)
 			{
-				throw new System.ArgumentOutOfRangeException(nameof(rowIndex));
+				throw new ArgumentOutOfRangeException(nameof(rowIndex));
 			}
 
-			// Remove row from UI
+			// Remove the content row from the content scroll view
 			var row = _contentRows[rowIndex];
-			var content = _contentArea.RowNumberScrollView.contentContainer;
-
-			if (content.Contains(row))
+			var contentContainer = _contentArea.ContentScrollView.contentContainer;
+			if (contentContainer.Contains(row))
 			{
-				content.Remove(row);
+				contentContainer.Remove(row);
 			}
-			
+
 			_contentRows.RemoveAt(rowIndex);
 			_contentCells.RemoveAt(rowIndex);
 
-			// Remove row number cell
+			// Remove the row number cell from the row number scroll view
+			var rowNumberContainer = _contentArea.RowNumberScrollView.contentContainer;
 			var rowNum = _rowNumberCells[rowIndex];
-			if (content.Contains(rowNum))
+			if (rowNumberContainer.Contains(rowNum))
 			{
-				content.Remove(rowNum);
+				rowNumberContainer.Remove(rowNum);
 			}
 			_rowNumberCells.RemoveAt(rowIndex);
 
-			// Update row indices and classes
+			// Reindex and restyle the rows that shifted up to fill the gap
 			for (var i = rowIndex; i < _contentRows.Count; i++)
 			{
 				var currentRow = _contentRows[i];
@@ -495,8 +491,18 @@ namespace Nonatomic.UIElements
 				currentRow.RemoveFromClassList("ui-table__row--odd");
 				currentRow.AddToClassList((i + 1) % 2 == 0 ? "ui-table__row--even" : "ui-table__row--odd");
 
+				// Keep the row index on each content cell in sync with its new position
+				foreach (var cell in _contentCells[i])
+				{
+					if (cell is TableCell tableCell)
+					{
+						tableCell.SetRowIndex(i);
+					}
+				}
+
 				var rowNumberCell = _rowNumberCells[i];
-				// rowNumberCell.text = $"{i + 1}";
+				rowNumberCell.SetRowIndex(i);
+				rowNumberCell.SetLabel($"{i + 1}");
 				rowNumberCell.RemoveFromClassList("ui-table__fixed-column--even");
 				rowNumberCell.RemoveFromClassList("ui-table__fixed-column--odd");
 				rowNumberCell.AddToClassList((i + 1) % 2 == 0 ? "ui-table__fixed-column--even" : "ui-table__fixed-column--odd");
@@ -515,13 +521,24 @@ namespace Nonatomic.UIElements
 			}
 			
 			_columns[columnIndex] = columnDefinition;
-			var columnWidth = columnDefinition.Width ?? 100f;
-			
+			var columnWidth = columnDefinition.Width ?? DefaultColumnWidth;
+
 			//remove 1 from the column index because the row number is not included in this container
 			columnIndex -= 1;
 			var header = _headerScrollView.contentContainer.ElementAt(columnIndex) as HeaderCell;
 			header.SetLabel(columnDefinition.Label);
 			header.SetWidth(columnWidth);
+
+			// Resize the body cells in this column so they stay aligned with the header
+			foreach (var rowCells in _contentCells)
+			{
+				if (columnIndex < rowCells.Count && rowCells[columnIndex] is TableCell cell)
+				{
+					cell.SetWidth(columnWidth);
+				}
+			}
+
+			UpdateRowWidths();
 		}
 
 		public void AddColumn(ColumnDefinition columnDefinition)
@@ -539,13 +556,15 @@ namespace Nonatomic.UIElements
 			_headerScrollView.contentContainer.Add(headerCell);
 
 			// Add cells to each row
+			// columnIndex includes the row-number column, so subtract 1 for the content-based cell index
+			var contentColumnIndex = columnIndex - 1;
 			for (var i = 0; i < _contentRows.Count; i++)
 			{
 				var row = _contentRows[i];
-				var cell = new TableCell(columnIndex, i);
+				var cell = new TableCell(contentColumnIndex, i);
 				cell.RegisterCallback<ClickEvent>(evt => HandleTableCellClick(cell));
 				cell.SetWidth(columnWidth);
-				
+
 				row.Add(cell);
 				_contentCells[i].Add(cell);
 			}

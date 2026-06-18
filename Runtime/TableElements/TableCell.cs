@@ -19,7 +19,13 @@ namespace Nonatomic.UIElements.TableElements
 			RegisterCallback<PointerDownEvent>(evt => HandleCellPointerDown());
 			RegisterCallback<PointerUpEvent>(evt => HandleCellPointerUp());
 		}
-		
+
+		public void SetRowIndex(int rowIndex)
+		{
+			RowIndex = rowIndex;
+			name = $"Cell_{ColumnIndex}_{rowIndex}";
+		}
+
 		public void SetRowHeight(float height, bool flexible = false)
 		{
 			if (flexible)
