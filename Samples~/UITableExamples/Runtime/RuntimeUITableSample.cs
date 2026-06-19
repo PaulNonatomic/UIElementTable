@@ -15,8 +15,8 @@ namespace Nonatomic.UIElements.Examples
 	[RequireComponent(typeof(UIDocument))]
 	public class RuntimeUITableSample : MonoBehaviour
 	{
-		private readonly List<SamplePerson> _people = new List<SamplePerson>();
-		private DataBindingUITable<SamplePerson> _table;
+		private readonly List<Person> _people = new List<Person>();
+		private DataBindingUITable<Person> _table;
 		private Label _status;
 		private int _added;
 		private UIDocument _document;
@@ -48,7 +48,7 @@ namespace Nonatomic.UIElements.Examples
 
 			if (!_initialized)
 			{
-				_people.AddRange(SamplePerson.SetA());
+				_people.AddRange(Person.SetA());
 				_initialized = true;
 			}
 
@@ -67,7 +67,7 @@ namespace Nonatomic.UIElements.Examples
 
 			root.Add(BuildControls());
 
-			_table = new DataBindingUITable<SamplePerson>();
+			_table = new DataBindingUITable<Person>();
 			_table.style.flexGrow = 1;
 			_table.style.marginTop = 8;
 			// Sizes to its columns by default; uncomment to fill the panel width instead:
@@ -107,7 +107,7 @@ namespace Nonatomic.UIElements.Examples
 			var name = $"{names[_added % names.Length]}{_added}";
 			var country = countries[_added % countries.Length];
 			var age = 18 + (_added * 5) % 50;
-			_people.Add(new SamplePerson(name, age, country));
+			_people.Add(new Person(name, age, country));
 			_table.SetData(_people);
 			SetStatus($"Added {name}. Rows: {_table.RowCount}");
 		}
@@ -123,7 +123,7 @@ namespace Nonatomic.UIElements.Examples
 		private void ResetData()
 		{
 			_people.Clear();
-			_people.AddRange(SamplePerson.SetA());
+			_people.AddRange(Person.SetA());
 			_added = 0;
 			_table.SetData(_people);
 			SetStatus($"Reset. Rows: {_table.RowCount}");

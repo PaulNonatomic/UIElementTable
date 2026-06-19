@@ -20,7 +20,7 @@ namespace Nonatomic.UIElements.ExamplesEditor
 		private VisualElement _actionBar;
 		private VisualElement _host;
 		private ScrollView _log;
-		private DataBindingUITable<SamplePerson> _bindingTable;
+		private DataBindingUITable<Person> _bindingTable;
 
 		[MenuItem("Window/UI Table Examples/Validation Harness")]
 		public static void Open()
@@ -105,24 +105,24 @@ namespace Nonatomic.UIElements.ExamplesEditor
 		private void BuildDataBinding()
 		{
 			BeginScenario("=== Data binding (README scenario) ===");
-			_bindingTable = new DataBindingUITable<SamplePerson>();
+			_bindingTable = new DataBindingUITable<Person>();
 			_bindingTable.style.flexGrow = 1;
 			_bindingTable.ShowRowNumbers(new ColumnDefinition("#", 40f));
 			_bindingTable.AddColumn(new ColumnDefinition("Name", 150f), p => new Label(p.Name));
 			_bindingTable.AddColumn(new ColumnDefinition("Age", 60f), p => new Label(p.Age.ToString()));
 			_bindingTable.AddColumn(new ColumnDefinition("Country", 120f), p => new Label(p.Country));
 			WireEvents(_bindingTable);
-			_bindingTable.SetData(SamplePerson.SetA());
+			_bindingTable.SetData(Person.SetA());
 			_host.Add(_bindingTable);
 			AssertCellCount(_bindingTable, "after SetData(3)");
 			AssertRowNumbers(_bindingTable, "after SetData(3)");
 
-			_actionBar.Add(new Button(() => Rebind(SamplePerson.SetB(), "5 rows")) { text = "Re-bind 5 rows" });
-			_actionBar.Add(new Button(() => Rebind(SamplePerson.SetC(), "2 rows")) { text = "Re-bind 2 rows" });
+			_actionBar.Add(new Button(() => Rebind(Person.SetB(), "5 rows")) { text = "Re-bind 5 rows" });
+			_actionBar.Add(new Button(() => Rebind(Person.SetC(), "2 rows")) { text = "Re-bind 2 rows" });
 			Log("Re-bind repeatedly. Pre-fix, rows leaked/duplicated on each SetData; the cell-count assertion catches that.");
 		}
 
-		private void Rebind(List<SamplePerson> data, string label)
+		private void Rebind(List<Person> data, string label)
 		{
 			_bindingTable.SetData(data);
 			Log($"--- Re-bind to {label} ---");
@@ -133,13 +133,13 @@ namespace Nonatomic.UIElements.ExamplesEditor
 		private void BuildRowOps()
 		{
 			BeginScenario("=== Row ops (remove middle / add) ===");
-			var table = new DataBindingUITable<SamplePerson>();
+			var table = new DataBindingUITable<Person>();
 			table.style.flexGrow = 1;
 			table.ShowRowNumbers(new ColumnDefinition("#", 40f));
 			table.AddColumn(new ColumnDefinition("Name", 150f), p => new Label(p.Name));
 			table.AddColumn(new ColumnDefinition("Country", 120f), p => new Label(p.Country));
 			WireEvents(table);
-			table.SetData(SamplePerson.SetB());
+			table.SetData(Person.SetB());
 			_host.Add(table);
 			AssertCellCount(table, "5 rows");
 			AssertRowNumbers(table, "5 rows");
