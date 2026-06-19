@@ -1,5 +1,5 @@
 {
-    "name": "ccom.nonatomic.uitable.runtime.asmdef",
+    "name": "com.nonatomic.uitable.runtime",
     "rootNamespace": "Nonatomic.UIElements",
     "references": [],
     "includePlatforms": [],
