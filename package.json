@@ -27,7 +27,11 @@
     "url": "git@github.com:PaulNonatomic/UIElementTable.git"
   },
   "samples": [
-   
+    {
+      "displayName": "UITable Examples",
+      "description": "Editor validation harness, plus runtime and world-space sample scenes.",
+      "path": "Samples~/UITableExamples"
+    }
   ]
 }
   
