@@ -568,6 +568,10 @@ namespace Nonatomic.UIElements
 				row.Add(cell);
 				_contentCells[i].Add(cell);
 			}
+
+			// Widen the rows to include the new column, otherwise the new cells render
+			// past the row's fixed width and get clipped by the scroll viewport.
+			UpdateRowWidths();
 		}
 
 
@@ -625,6 +629,15 @@ namespace Nonatomic.UIElements
 			_includeRowNumbers = false;
 			_contentArea.HideRowNumbers();
 			_topLeftCornerCell?.AddToClassList("ui-table__top-left-cell--hidden");
+		}
+
+		/// <summary>
+		/// Controls whether the table stretches to fill its container's width or sizes to its
+		/// columns. Tables size to their columns by default; pass true to fill the available width.
+		/// </summary>
+		public void SetFillWidth(bool fillWidth)
+		{
+			EnableInClassList("ui-table--fill-width", fillWidth);
 		}
 
 		private void UpdateRowWidths()
