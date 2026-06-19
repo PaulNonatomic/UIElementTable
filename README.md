@@ -66,5 +66,11 @@ public class Person
 ```
 ![Unity_eSa6UxeX1c](https://github.com/user-attachments/assets/e67a80fd-70e5-4695-b9c6-639a37afaf60)
 
+## World space
+
+A `UITable` is standard UI Toolkit content, so it renders in a world-space `UIDocument` just as it does on screen (world-space UI Toolkit requires Unity 6.2+):
+
+![UITable rendered in world space](Readme~/world-space-sample.png)
+
 
 
