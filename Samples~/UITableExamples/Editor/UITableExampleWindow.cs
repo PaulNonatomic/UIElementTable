@@ -21,6 +21,7 @@ namespace Nonatomic.UIElements.ExamplesEditor
 		private VisualElement _host;
 		private ScrollView _log;
 		private DataBindingUITable<Person> _bindingTable;
+		private StyleSheet _activeTheme;
 
 		[MenuItem("Window/UI Table Examples/Validation Harness")]
 		public static void Open()
@@ -52,6 +53,7 @@ namespace Nonatomic.UIElements.ExamplesEditor
 			toolbar.Add(new Button(BuildColumnOps) { text = "Column ops" });
 			toolbar.Add(new Button(BuildEmptyHover) { text = "Empty hover" });
 			toolbar.Add(new Button(BuildFlexHeights) { text = "Flexible heights" });
+			toolbar.Add(new Button(BuildStyling) { text = "Styling" });
 			root.Add(toolbar);
 
 			_actionBar = Row();
@@ -244,6 +246,53 @@ namespace Nonatomic.UIElements.ExamplesEditor
 				Log("--- SynchronizeRowHeights() ---");
 			}) { text = "Synchronize row heights" });
 			Log("Rows with taller content should expand; the row-number cells should match their row height.");
+		}
+
+		private void BuildStyling()
+		{
+			BeginScenario("=== Styling (restyle via a custom stylesheet) ===");
+			_activeTheme = null;
+			var table = new DataBindingUITable<Person>();
+			table.style.flexGrow = 1;
+			table.ShowRowNumbers(new ColumnDefinition("#", 40f));
+			table.AddColumn(new ColumnDefinition("Name", 150f), p => new Label(p.Name));
+			table.AddColumn(new ColumnDefinition("Age", 60f), p => new Label(p.Age.ToString()));
+			table.AddColumn(new ColumnDefinition("Country", 120f), p => new Label(p.Country));
+			WireEvents(table);
+			table.SetData(Person.SetA());
+			_host.Add(table);
+
+			_actionBar.Add(new Button(() => ApplyTheme(table, null)) { text = "Default" });
+			_actionBar.Add(new Button(() => ApplyTheme(table, "UITableThemeLight")) { text = "Light" });
+			_actionBar.Add(new Button(() => ApplyTheme(table, "UITableThemeOcean")) { text = "Ocean" });
+			Log("Each theme is a small .uss overriding the .ui-table USS variables, applied with SetCustomStyleSheet.");
+		}
+
+		private void ApplyTheme(UITable table, string themeAssetName)
+		{
+			if (_activeTheme != null)
+			{
+				table.styleSheets.Remove(_activeTheme);
+				_activeTheme = null;
+			}
+
+			if (string.IsNullOrEmpty(themeAssetName))
+			{
+				Log("--- Default (custom stylesheet removed) ---");
+				return;
+			}
+
+			var guids = AssetDatabase.FindAssets($"{themeAssetName} t:StyleSheet");
+			if (guids.Length == 0)
+			{
+				Log($"[FAIL] StyleSheet '{themeAssetName}' not found.", false);
+				return;
+			}
+
+			var sheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(AssetDatabase.GUIDToAssetPath(guids[0]));
+			table.SetCustomStyleSheet(sheet);
+			_activeTheme = sheet;
+			Log($"--- Applied {themeAssetName} ---");
 		}
 
 		// ---- helpers ---------------------------------------------------------

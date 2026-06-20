@@ -1,0 +1,11 @@
+/* Light theme for UITable.
+   Restyle by overriding the .ui-table USS variables; the package's derived variables
+   (header/cell/row-number text and the highlight/pressed colours) cascade from these. */
+.ui-table {
+    --text-color: #1f2933;
+    --header-bg-color: #dfe3e8;
+    --number-column-bg-color: #d4d9df;
+    --row-even-bg-color: #ffffff;
+    --row-odd-bg-color: #f1f3f5;
+    --highlight-bg-color: #cfe3ff;
+}

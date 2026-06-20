@@ -1,0 +1,9 @@
+/* Ocean theme for UITable. Overrides the .ui-table USS variables; everything else cascades. */
+.ui-table {
+    --text-color: #eaf6ff;
+    --header-bg-color: #07314a;
+    --number-column-bg-color: #07314a;
+    --row-even-bg-color: #12658f;
+    --row-odd-bg-color: #0e527a;
+    --highlight-bg-color: #1f8fbf;
+}

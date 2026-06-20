@@ -24,6 +24,9 @@ Scenarios:
   enough for its cells. The blank-column button verifies empty cells still render as styled boxes.
 - **Empty hover** - a table with columns and zero rows; hovering a header used to throw.
 - **Flexible heights** - variable-height content with `SynchronizeRowHeights`.
+- **Styling** - swap between the default look and the included Light / Ocean themes live, to show
+  restyling via `SetCustomStyleSheet`. The themes are in `Runtime/Themes/` and only override the
+  `.ui-table` USS variables.
 
 `Person.cs` is the shared demo model, kept outside the `Editor/` folder so the runtime
 samples can reuse it.
