@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.0] - Jun 19, 2026
+- Added SetFillWidth to stretch the table to its container width
+- Tables now size to their columns by default so the header bar and body align (call SetFillWidth(true) for the previous fill-width behaviour)
+- Fixed RemoveRow removing rows from the wrong scroll view, which left data rows on screen and made data-bound refresh leak and duplicate rows
+- Fixed RemoveRow not reindexing and relabelling the remaining rows
+- Fixed AddColumn assigning the wrong column index to body cells
+- Fixed AddColumn not widening rows, which clipped the new column
+- Fixed SetColumn not resizing body cells to match the header width
+- Fixed column header hover throwing when the table had no rows
+- Fixed body cell text colour so cell text renders correctly in runtime and world-space panels
+- Fixed the malformed runtime assembly name in the asmdef
+
 ## [0.4.1] - Dec 27, 2024
 - Fix for the class scoped content area being set after an attempt to create rows that uses the class scoped content area.
 

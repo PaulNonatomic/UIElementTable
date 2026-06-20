@@ -5,6 +5,7 @@
     
     /* Text */
     --text-color: #ffffff;
+    --cell-text-color: var(--text-color);
     --header-text-color: var(--text-color);
     --row-number-text-color: var(--text-color);
     --row-number-even-text-color: var( --row-number-text-color);
@@ -45,8 +46,16 @@
     --text-cell-down-color: var(--text-highlight-color);
     --text-row-down-color: var(--text-row-highlight-color);
     --text-column-down-color: var(--text-column-highlight-color);
-    
+
     flex-direction: column;
+    /* Tables size to their columns by default so the header and body line up.
+       Call SetFillWidth(true) to fill the container width instead. */
+    align-self: flex-start;
+}
+
+/* Added by SetFillWidth(true): stretch to fill the container width. */
+.ui-table--fill-width {
+    align-self: stretch;
 }
 
 /* Top row container */
@@ -87,6 +96,7 @@
     flex-grow: 0;
     border-color: rgba(0,0,0,0.1);
     border-width: 1px;
+    color: var(--cell-text-color);
 }
 
 /* Header cell */
