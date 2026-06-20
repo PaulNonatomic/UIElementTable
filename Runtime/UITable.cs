@@ -21,6 +21,8 @@ namespace Nonatomic.UIElements
 		private TableContentArea _contentArea;
 		private readonly bool _flexibleRowHeights;
 		private bool _includeRowNumbers;
+		private readonly TableHighlighter _highlighter;
+		private readonly RowHeightController _rowHeights;
 
 		private const float DefaultColumnWidth = 100;
 		private const float DefaultRowHeight = 30;
@@ -39,6 +41,8 @@ namespace Nonatomic.UIElements
 		{
 			_flexibleRowHeights = false;
 			_includeRowNumbers = false;
+			_highlighter = new TableHighlighter(this, _rows);
+			_rowHeights = new RowHeightController(_flexibleRowHeights);
 
 			var styleSheet = Resources.Load<StyleSheet>("UITable");
 			AddToClassList("ui-table");
@@ -63,6 +67,8 @@ namespace Nonatomic.UIElements
 		{
 			_flexibleRowHeights = flexibleRowHeights;
 			_includeRowNumbers = includeRowNumbers;
+			_highlighter = new TableHighlighter(this, _rows);
+			_rowHeights = new RowHeightController(_flexibleRowHeights);
 
 			var styleSheet = Resources.Load<StyleSheet>("UITable");
 			AddToClassList("ui-table");
@@ -170,18 +176,13 @@ namespace Nonatomic.UIElements
 			if (_flexibleRowHeights)
 			{
 				// Recompute this row's height when its content resizes.
-				content.RegisterCallback<GeometryChangedEvent>(evt => UpdateRowHeight(row));
+				content.RegisterCallback<GeometryChangedEvent>(evt => _rowHeights.UpdateRow(row));
 			}
 		}
 
 		public void SynchronizeRowHeights()
 		{
-			if (!_flexibleRowHeights) return;
-
-			foreach (var row in _rows)
-			{
-				UpdateRowHeight(row);
-			}
+			_rowHeights.UpdateAll(_rows);
 		}
 
 		private void CreateTable(int columnCount, int rowCount, List<ColumnDefinition> columnDefinitions = null, Dictionary<int, float> rowHeights = null)
@@ -197,29 +198,6 @@ namespace Nonatomic.UIElements
 
 			if (_includeRowNumbers) return;
 			HideRowNumbers();
-		}
-
-		private void UpdateRowHeight(Row row)
-		{
-			if (!_flexibleRowHeights) return;
-
-			var numberCell = _includeRowNumbers ? row.NumberCell : null;
-
-			// The row is as tall as its tallest cell (including the row-number cell, if shown).
-			var maxHeight = 0f;
-			foreach (var cell in row.Cells)
-			{
-				maxHeight = Mathf.Max(maxHeight, cell.resolvedStyle.height);
-			}
-
-			if (numberCell != null)
-			{
-				maxHeight = Mathf.Max(maxHeight, numberCell.resolvedStyle.height);
-			}
-
-			row.style.height = maxHeight;
-			row.MarkDirtyRepaint();
-			numberCell?.SetRowHeight(maxHeight, _flexibleRowHeights);
 		}
 
 		private List<ColumnDefinition> GenerateDefaultColumns(int columnCount, float defaultColumnWidth)
@@ -250,8 +228,8 @@ namespace Nonatomic.UIElements
 			_topLeftCornerCell.AddToClassList("ui-table__header-cell");
 
 			// Add pointer event handlers for top-left cell
-			_topLeftCornerCell.RegisterCallback<PointerEnterEvent>(evt => OnTopLeftCellPointerEnter());
-			_topLeftCornerCell.RegisterCallback<PointerLeaveEvent>(evt => OnTopLeftCellPointerLeave());
+			_topLeftCornerCell.RegisterCallback<PointerEnterEvent>(evt => _highlighter.SetTableHighlight(true));
+			_topLeftCornerCell.RegisterCallback<PointerLeaveEvent>(evt => _highlighter.SetTableHighlight(false));
 
 			topRowContainer.Add(_topLeftCornerCell);
 
@@ -270,8 +248,8 @@ namespace Nonatomic.UIElements
 				headerCell.AddToClassList("ui-table__header-cell");
 
 				var index = i-1;
-				headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(index));
-				headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(index));
+				headerCell.RegisterCallback<PointerEnterEvent>(evt => _highlighter.SetColumnHighlight(index, true));
+				headerCell.RegisterCallback<PointerLeaveEvent>(evt => _highlighter.SetColumnHighlight(index, false));
 				headerCell.RegisterCallback<ClickEvent>(evt => HandleColumnHeaderClick(headerCell));
 
 				_headerScrollView.contentContainer.Add(headerCell);
@@ -323,48 +301,6 @@ namespace Nonatomic.UIElements
 			};
 		}
 
-		private void OnRowHeaderPointerEnter(Row row)
-		{
-			row.AddToClassList("ui-table__row--highlighted");
-		}
-
-		private void OnRowHeaderPointerLeave(Row row)
-		{
-			row.RemoveFromClassList("ui-table__row--highlighted");
-		}
-
-		private void OnHeaderCellPointerEnter(int columnIndex)
-		{
-			if (_rows.Count == 0) return;
-			if (columnIndex < 0 || columnIndex >= _rows[0].CellCount) return;
-
-			foreach (var row in _rows)
-			{
-				row.GetCell(columnIndex).AddToClassList("ui-table__column--highlighted");
-			}
-		}
-
-		private void OnHeaderCellPointerLeave(int columnIndex)
-		{
-			if (_rows.Count == 0) return;
-			if (columnIndex < 0 || columnIndex >= _rows[0].CellCount) return;
-
-			foreach (var row in _rows)
-			{
-				row.GetCell(columnIndex).RemoveFromClassList("ui-table__column--highlighted");
-			}
-		}
-
-		private void OnTopLeftCellPointerEnter()
-		{
-			AddToClassList("ui-table--highlighted");
-		}
-
-		private void OnTopLeftCellPointerLeave()
-		{
-			RemoveFromClassList("ui-table--highlighted");
-		}
-
 		// Method to add a new row
 		public void AddRow(Dictionary<int, VisualElement> cellContents = null)
 		{
@@ -405,8 +341,8 @@ namespace Nonatomic.UIElements
 			var rowNumberWidth = columns[0].Width ?? defaultColumnWidth;
 			var numberCell = new RowHeaderCell($"{_rows.Count + 1}", rowNumberWidth, rowHeight, rowIndex);
 			numberCell.SetRowHeight(rowHeight, _flexibleRowHeights);
-			numberCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(row));
-			numberCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(row));
+			numberCell.RegisterCallback<PointerEnterEvent>(evt => _highlighter.SetRowHighlight(row, true));
+			numberCell.RegisterCallback<PointerLeaveEvent>(evt => _highlighter.SetRowHighlight(row, false));
 			numberCell.RegisterCallback<ClickEvent>(evt => HandleRowHeaderClick(numberCell));
 			row.NumberCell = numberCell;
 
@@ -481,8 +417,8 @@ namespace Nonatomic.UIElements
 			var columnIndex = _columns.Count - 1;
 
 			var headerCell = new ColumnHeaderCell(columnDefinition.Label, columnWidth, DefaultRowHeight, columnIndex);
-			headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(columnIndex - 1));
-			headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(columnIndex - 1));
+			headerCell.RegisterCallback<PointerEnterEvent>(evt => _highlighter.SetColumnHighlight(columnIndex - 1, true));
+			headerCell.RegisterCallback<PointerLeaveEvent>(evt => _highlighter.SetColumnHighlight(columnIndex - 1, false));
 			headerCell.RegisterCallback<ClickEvent>(evt => HandleColumnHeaderClick(headerCell));
 			_headerScrollView.contentContainer.Add(headerCell);
 
