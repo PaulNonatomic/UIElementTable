@@ -1,7 +1,8 @@
 # Change Log
 
-## [0.5.0] - Jun 19, 2026
+## [0.5.0] - Jun 20, 2026
 - Added SetFillWidth to stretch the table to its container width
+- Added a UITable Examples sample: an editor validation harness, runtime and world-space sample scenes, and Light/Ocean theme examples
 - Tables now size to their columns by default so the header bar and body align (call SetFillWidth(true) for the previous fill-width behaviour)
 - Fixed RemoveRow removing rows from the wrong scroll view, which left data rows on screen and made data-bound refresh leak and duplicate rows
 - Fixed RemoveRow not reindexing and relabelling the remaining rows

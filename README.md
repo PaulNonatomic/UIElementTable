@@ -87,5 +87,25 @@ A `UITable` is standard UI Toolkit content, so it renders in a world-space `UIDo
 
 ![UITable rendered in world space](Readme~/world-space-sample.png)
 
+## Styling
+
+`SetCustomStyleSheet` (above) layers a custom stylesheet over the default look. The table's appearance is driven by USS variables on `.ui-table`, so a theme is just a short override:
+
+```css
+.ui-table {
+    --text-color: #1f2933;
+    --header-bg-color: #dfe3e8;
+    --row-even-bg-color: #ffffff;
+    --row-odd-bg-color: #f1f3f5;
+    --highlight-bg-color: #cfe3ff;
+}
+```
+
+The samples include Light and Ocean themes and a scenario that swaps them at runtime.
+
+## Samples
+
+Import **UITable Examples** from the package's Samples tab in the Package Manager: an editor validation harness, runtime and world-space sample scenes, and the theme examples.
+
 
 
