@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nonatomic.UIElements.Events;
@@ -13,34 +13,34 @@ namespace Nonatomic.UIElements
 	/// </summary>
 	public class UITable : VisualElement
 	{
+		public int RowCount => _rows.Count;
+		public int ColumnCount => _rows.Count == 0 ? 0 : _rows[0].CellCount;
+
 		private ScrollView _headerScrollView;
-		private List<List<VisualElement>> _contentCells = new();
-		private List<RowHeaderCell> _rowNumberCells = new();
-		private List<VisualElement> _contentRows = new();
+		private readonly List<Row> _rows = new();
 		private List<ColumnDefinition> _columns;
 		private VisualElement _topLeftCornerCell;
 		private VisualElement _topRowContainer;
 		private TableContentArea _contentArea;
 		private readonly bool _flexibleRowHeights;
 		private bool _includeRowNumbers;
-		
+		private readonly TableHighlighter _highlighter;
+		private readonly RowHeightController _rowHeights;
+
 		private const float DefaultColumnWidth = 100;
 		private const float DefaultRowHeight = 30;
 		private const int DefaultRowCount = 0;
 		private const int DefaultColumnCount = 0;
 
-		public int RowCount => _contentCells.Count;
-		public int ColumnCount => _contentCells.Count == 0 ? 0 : _contentCells[0].Count;
-
 		/// <summary>
-		/// Represents a customizable table component for creating and managing grid-like layouts in Unity's UIElements framework.
-		/// Allows for defining rows and columns, setting custom cell content, customizing display properties, and handling
-		/// flexible row heights and row numbers for advanced table behavior.
+		/// Initializes a new, empty <see cref="UITable"/> with default styling, fixed row heights, and no row numbers.
 		/// </summary>
 		public UITable()
 		{
 			_flexibleRowHeights = false;
 			_includeRowNumbers = false;
+			_highlighter = new TableHighlighter(this, _rows);
+			_rowHeights = new RowHeightController(_flexibleRowHeights);
 
 			var styleSheet = Resources.Load<StyleSheet>("UITable");
 			AddToClassList("ui-table");
@@ -51,10 +51,14 @@ namespace Nonatomic.UIElements
 		}
 
 		/// <summary>
-		/// Represents a customizable table component for creating and managing grid-like layouts in Unity's UIElements framework.
-		/// Supports functionalities such as dynamic row and column management, content customization, flexible row heights, and optional row numbering.
-		/// Provides synchronization of scrolling and enables styling through a custom stylesheet.
-		/// </summary
+		/// Initializes a new <see cref="UITable"/> populated with the given rows and columns.
+		/// </summary>
+		/// <param name="rowCount">The number of rows to create initially.</param>
+		/// <param name="columnCount">The number of content columns to create when <paramref name="columns"/> is not supplied.</param>
+		/// <param name="columns">Optional column definitions; when null, default columns are generated.</param>
+		/// <param name="rowHeights">Optional per-row heights keyed by zero-based row index.</param>
+		/// <param name="flexibleRowHeights">When true, rows grow to fit their tallest cell instead of using a fixed height.</param>
+		/// <param name="includeRowNumbers">When true, the row-number column is shown.</param>
 		public UITable(
 			int rowCount,
 			int columnCount = 0,
@@ -65,6 +69,8 @@ namespace Nonatomic.UIElements
 		{
 			_flexibleRowHeights = flexibleRowHeights;
 			_includeRowNumbers = includeRowNumbers;
+			_highlighter = new TableHighlighter(this, _rows);
+			_rowHeights = new RowHeightController(_flexibleRowHeights);
 
 			var styleSheet = Resources.Load<StyleSheet>("UITable");
 			AddToClassList("ui-table");
@@ -93,18 +99,17 @@ namespace Nonatomic.UIElements
 		/// </exception>
 		public VisualElement GetCell(int columnIndex, int rowIndex)
 		{
-			if (rowIndex < 0 || rowIndex >= _contentCells.Count)
+			if (rowIndex < 0 || rowIndex >= _rows.Count)
 			{
-				throw new ArgumentOutOfRangeException(nameof(rowIndex), $"Row index {rowIndex} is out of range. Valid range: 0 to {_contentCells.Count - 1}.");
+				throw new ArgumentOutOfRangeException(nameof(rowIndex), $"Row index {rowIndex} is out of range. Valid range: 0 to {_rows.Count - 1}.");
 			}
 
-			if (columnIndex < 0 || columnIndex >= _contentCells[rowIndex].Count)
+			if (columnIndex < 0 || columnIndex >= _rows[rowIndex].CellCount)
 			{
-				throw new ArgumentOutOfRangeException(nameof(columnIndex), $"Column index {columnIndex} is out of range. Valid range: 0 to {_contentCells[rowIndex].Count - 1}.");
+				throw new ArgumentOutOfRangeException(nameof(columnIndex), $"Column index {columnIndex} is out of range. Valid range: 0 to {_rows[rowIndex].CellCount - 1}.");
 			}
 
-			// Retrieve and return the cell
-			return _contentCells[rowIndex][columnIndex];
+			return _rows[rowIndex].GetCell(columnIndex);
 		}
 
 		/// <summary>
@@ -118,17 +123,17 @@ namespace Nonatomic.UIElements
 		/// </exception>
 		public List<VisualElement> GetRow(int rowIndex)
 		{
-			if (_contentCells.Count == 0)
+			if (_rows.Count == 0)
 			{
 				throw new InvalidOperationException("There are no rows in the table.");
 			}
 
-			if (rowIndex < 0 || rowIndex >= _contentCells.Count)
+			if (rowIndex < 0 || rowIndex >= _rows.Count)
 			{
 				throw new ArgumentOutOfRangeException(nameof(rowIndex));
 			}
-			
-			return _contentCells[rowIndex];
+
+			return _rows[rowIndex].Cells.Cast<VisualElement>().ToList();
 		}
 
 		/// <summary>
@@ -140,53 +145,233 @@ namespace Nonatomic.UIElements
 		/// <exception cref="ArgumentOutOfRangeException">Thrown when the specified column index is out of range.</exception>
 		public List<VisualElement> GetColumn(int columnIndex)
 		{
-			if (_contentCells.Count == 0)
+			if (_rows.Count == 0)
 			{
 				throw new InvalidOperationException("There are no rows in the table.");
 			}
 
-			if (columnIndex < 0 || columnIndex >= _contentCells[0].Count)
+			if (columnIndex < 0 || columnIndex >= _rows[0].CellCount)
 			{
 				throw new ArgumentOutOfRangeException(nameof(columnIndex));
 			}
 
-			return _contentCells.Select(t => t[columnIndex]).ToList();
+			return _rows.Select(row => (VisualElement)row.GetCell(columnIndex)).ToList();
 		}
-	
+
+		/// <summary>
+		/// Replaces the content of the cell at the given row and column, removing any existing content first.
+		/// </summary>
+		/// <param name="rowIndex">The zero-based index of the row containing the cell.</param>
+		/// <param name="columnIndex">The zero-based index of the column containing the cell.</param>
+		/// <param name="content">The visual element to place in the cell.</param>
+		/// <exception cref="ArgumentOutOfRangeException">Thrown when rowIndex or columnIndex is outside the valid range.</exception>
 		public void SetCell(int rowIndex, int columnIndex, VisualElement content)
 		{
-			if (rowIndex < 0 || rowIndex >= _contentCells.Count)
+			if (rowIndex < 0 || rowIndex >= _rows.Count)
 			{
 				throw new ArgumentOutOfRangeException(nameof(rowIndex));
 			}
 
-			if (columnIndex < 0 || columnIndex >= _contentCells[rowIndex].Count)
+			if (columnIndex < 0 || columnIndex >= _rows[rowIndex].CellCount)
 			{
 				throw new ArgumentOutOfRangeException(nameof(columnIndex));
 			}
 
-			var cell = _contentCells[rowIndex][columnIndex];
-			cell.Clear(); // Remove any existing content
+			var row = _rows[rowIndex];
+			var cell = row.GetCell(columnIndex);
+			cell.Clear();
 			cell.Add(content);
 
 			if (_flexibleRowHeights)
 			{
-				// Listen for geometry changes in the content
-				content.RegisterCallback<GeometryChangedEvent>((evt) =>
-				{
-					UpdateRowHeight(rowIndex);
-				});
+				// Recompute this row's height when its content resizes.
+				content.RegisterCallback<GeometryChangedEvent>(evt => _rowHeights.UpdateRow(row));
 			}
 		}
 
+		/// <summary>
+		/// Appends a new row to the bottom of the table, optionally seeding cells with content keyed by column index.
+		/// </summary>
+		/// <param name="cellContents">Optional initial content for cells in the new row, keyed by zero-based column index.</param>
+		public void AddRow(Dictionary<int, VisualElement> cellContents = null)
+		{
+			AddRowInternal(_rows.Count, _columns, DefaultColumnWidth, DefaultRowHeight, null, cellContents);
+		}
+
+		/// <summary>
+		/// Removes the row at the given index and reindexes the rows below it so numbering and striping stay correct.
+		/// </summary>
+		/// <param name="rowIndex">The zero-based index of the row to remove.</param>
+		/// <exception cref="ArgumentOutOfRangeException">Thrown when rowIndex is outside the valid range.</exception>
+		public void RemoveRow(int rowIndex)
+		{
+			if (rowIndex < 0 || rowIndex >= _rows.Count)
+			{
+				throw new ArgumentOutOfRangeException(nameof(rowIndex));
+			}
+
+			var row = _rows[rowIndex];
+
+			var contentContainer = _contentArea.ContentScrollView.contentContainer;
+			if (contentContainer.Contains(row)) contentContainer.Remove(row);
+
+			var rowNumberContainer = _contentArea.RowNumberScrollView.contentContainer;
+			if (row.NumberCell != null && rowNumberContainer.Contains(row.NumberCell)) rowNumberContainer.Remove(row.NumberCell);
+
+			_rows.RemoveAt(rowIndex);
+
+			// Reindex the rows that shifted up; Row.SetIndex propagates to cells, number cell, and striping.
+			for (var i = rowIndex; i < _rows.Count; i++)
+			{
+				_rows[i].SetIndex(i);
+			}
+		}
+
+		/// <summary>
+		/// Appends a new column to the table, adding a header cell and a body cell to every existing row.
+		/// </summary>
+		/// <param name="columnDefinition">The label and width of the column to add.</param>
+		public void AddColumn(ColumnDefinition columnDefinition)
+		{
+			_columns.Add(columnDefinition);
+
+			// Add header cell
+			var columnWidth = columnDefinition.Width ?? DefaultColumnWidth;
+			var columnIndex = _columns.Count - 1;
+
+			var headerCell = new ColumnHeaderCell(columnDefinition.Label, columnWidth, DefaultRowHeight, columnIndex);
+			headerCell.RegisterCallback<PointerEnterEvent>(evt => _highlighter.SetColumnHighlight(columnIndex - 1, true));
+			headerCell.RegisterCallback<PointerLeaveEvent>(evt => _highlighter.SetColumnHighlight(columnIndex - 1, false));
+			headerCell.RegisterCallback<ClickEvent>(evt => HandleColumnHeaderClick(headerCell));
+			_headerScrollView.contentContainer.Add(headerCell);
+
+			// columnIndex includes the row-number column, so subtract 1 for the content-based cell index
+			var contentColumnIndex = columnIndex - 1;
+			foreach (var row in _rows)
+			{
+				var cell = new TableCell(contentColumnIndex, row.Index);
+				cell.RegisterCallback<ClickEvent>(evt => HandleTableCellClick(cell));
+				cell.SetWidth(columnWidth);
+				row.AddCell(cell);
+			}
+
+			// Widen the rows to include the new column, otherwise the new cells render
+			// past the row's fixed width and get clipped by the scroll viewport.
+			UpdateRowWidths();
+		}
+
+		/// <summary>
+		/// Removes the content column at the given index, including its header and the matching cell in every row.
+		/// </summary>
+		/// <param name="columnIndex">The zero-based index of the content column to remove (excludes the row-number column).</param>
+		/// <exception cref="ArgumentOutOfRangeException">Thrown when columnIndex is outside the valid range.</exception>
+		public void RemoveColumn(int columnIndex)
+		{
+			if (columnIndex < 0 || columnIndex >= _columns.Count - 1)
+			{
+				throw new ArgumentOutOfRangeException(nameof(columnIndex));
+			}
+
+			_headerScrollView.contentContainer.RemoveAt(columnIndex);
+
+			foreach (var row in _rows)
+			{
+				row.RemoveCellAt(columnIndex);
+			}
+
+			_columns.RemoveAt(columnIndex + 1);
+			UpdateRowWidths();
+		}
+
+		/// <summary>
+		/// Updates the definition of an existing content column, resizing its header and body cells. Adds the
+		/// column instead when the index is beyond the current range.
+		/// </summary>
+		/// <param name="columnIndex">The zero-based index of the content column to update (excludes the row-number column).</param>
+		/// <param name="columnDefinition">The new label and width for the column.</param>
+		public void SetColumn(int columnIndex, ColumnDefinition columnDefinition)
+		{
+			// Add 1 because of the row number column
+			columnIndex += 1;
+
+			if (columnIndex < 0 || columnIndex >= _columns.Count)
+			{
+				AddColumn(columnDefinition);
+				return;
+			}
+
+			_columns[columnIndex] = columnDefinition;
+			var columnWidth = columnDefinition.Width ?? DefaultColumnWidth;
+
+			// Remove 1 from the column index because the row number is not included in this container
+			columnIndex -= 1;
+			var header = _headerScrollView.contentContainer.ElementAt(columnIndex) as HeaderCell;
+			header.SetLabel(columnDefinition.Label);
+			header.SetWidth(columnWidth);
+
+			// Resize the body cells in this column so they stay aligned with the header
+			foreach (var row in _rows)
+			{
+				if (columnIndex < row.CellCount)
+				{
+					row.GetCell(columnIndex).SetWidth(columnWidth);
+				}
+			}
+
+			UpdateRowWidths();
+		}
+
+		/// <summary>
+		/// Shows the row-number column, optionally replacing its header definition.
+		/// </summary>
+		/// <param name="columnDefinition">Optional definition for the row-number column header; when null, the existing header is kept.</param>
+		public void ShowRowNumbers(ColumnDefinition columnDefinition = null)
+		{
+			_includeRowNumbers = true;
+			_contentArea.ShowRowNumbers();
+			_topLeftCornerCell?.RemoveFromClassList("ui-table__top-left-cell--hidden");
+
+			if (columnDefinition == null) return;
+
+			_columns[0] = columnDefinition;
+			var columnWidth = columnDefinition.Width ?? DefaultColumnWidth;
+
+			var header = _topRowContainer.ElementAt(0) as HeaderCell;
+			header.SetLabel(columnDefinition.Label);
+			header.SetWidth(columnWidth);
+
+			foreach (var row in _rows)
+			{
+				row.NumberCell?.SetWidth(columnWidth);
+			}
+		}
+
+		/// <summary>
+		/// Hides the row-number column and its top-left corner header.
+		/// </summary>
+		public void HideRowNumbers()
+		{
+			_includeRowNumbers = false;
+			_contentArea.HideRowNumbers();
+			_topLeftCornerCell?.AddToClassList("ui-table__top-left-cell--hidden");
+		}
+
+		/// <summary>
+		/// Controls whether the table stretches to fill its container's width or sizes to its
+		/// columns. Tables size to their columns by default; pass true to fill the available width.
+		/// </summary>
+		public void SetFillWidth(bool fillWidth)
+		{
+			EnableInClassList("ui-table--fill-width", fillWidth);
+		}
+
+		/// <summary>
+		/// Recomputes every row's height to fit its tallest cell. Has no effect unless the table was created
+		/// with flexible row heights.
+		/// </summary>
 		public void SynchronizeRowHeights()
 		{
-			if (!_flexibleRowHeights) return;
-
-			for (var i = 0; i < _contentRows.Count; i++)
-			{
-				UpdateRowHeight(i);
-			}
+			_rowHeights.UpdateAll(_rows);
 		}
 
 		private void CreateTable(int columnCount, int rowCount, List<ColumnDefinition> columnDefinitions = null, Dictionary<int, float> rowHeights = null)
@@ -202,41 +387,6 @@ namespace Nonatomic.UIElements
 
 			if (_includeRowNumbers) return;
 			HideRowNumbers();
-		}
-
-		private void UpdateRowHeight(int rowIndex)
-		{
-			if (!_flexibleRowHeights) return;
-
-			var contentRow = _contentRows[rowIndex];
-			RowHeaderCell rowNumberCell = null;
-
-			if (_includeRowNumbers)
-			{
-				rowNumberCell = _rowNumberCells[rowIndex];
-			}
-
-			// Calculate the maximum height among all cells in the row
-			var maxHeight = 0f;
-
-			// Check the height of each cell in the row
-			foreach (var cell in _contentCells[rowIndex])
-			{
-				maxHeight = Mathf.Max(maxHeight, cell.resolvedStyle.height);
-			}
-
-			// Also consider the row number column cell if it exists
-			if (rowNumberCell != null)
-			{
-				maxHeight = Mathf.Max(maxHeight, rowNumberCell.resolvedStyle.height);
-			}
-
-			// Apply the maximum height to the content row
-			contentRow.style.height = maxHeight;
-			contentRow.MarkDirtyRepaint();
-
-			// Also apply to the row number column cell if it exists
-			rowNumberCell?.SetRowHeight(maxHeight, _flexibleRowHeights);
 		}
 
 		private List<ColumnDefinition> GenerateDefaultColumns(int columnCount, float defaultColumnWidth)
@@ -266,9 +416,8 @@ namespace Nonatomic.UIElements
 			_topLeftCornerCell = new CornerHeaderCell(rowNumberColumn.Label, rowNumberWidth, defaultRowHeight);
 			_topLeftCornerCell.AddToClassList("ui-table__header-cell");
 
-			// Add pointer event handlers for top-left cell
-			_topLeftCornerCell.RegisterCallback<PointerEnterEvent>(evt => OnTopLeftCellPointerEnter());
-			_topLeftCornerCell.RegisterCallback<PointerLeaveEvent>(evt => OnTopLeftCellPointerLeave());
+			_topLeftCornerCell.RegisterCallback<PointerEnterEvent>(evt => _highlighter.SetTableHighlight(true));
+			_topLeftCornerCell.RegisterCallback<PointerLeaveEvent>(evt => _highlighter.SetTableHighlight(false));
 
 			topRowContainer.Add(_topLeftCornerCell);
 
@@ -287,8 +436,8 @@ namespace Nonatomic.UIElements
 				headerCell.AddToClassList("ui-table__header-cell");
 
 				var index = i-1;
-				headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(index));
-				headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(index));
+				headerCell.RegisterCallback<PointerEnterEvent>(evt => _highlighter.SetColumnHighlight(index, true));
+				headerCell.RegisterCallback<PointerLeaveEvent>(evt => _highlighter.SetColumnHighlight(index, false));
 				headerCell.RegisterCallback<ClickEvent>(evt => HandleColumnHeaderClick(headerCell));
 
 				_headerScrollView.contentContainer.Add(headerCell);
@@ -340,60 +489,8 @@ namespace Nonatomic.UIElements
 			};
 		}
 
-		private void OnRowHeaderPointerEnter(int rowIndex)
-		{
-			_contentRows[rowIndex].AddToClassList("ui-table__row--highlighted");
-		}
-
-		private void OnRowHeaderPointerLeave(int rowIndex)
-		{
-			_contentRows[rowIndex].RemoveFromClassList("ui-table__row--highlighted");
-		}
-
-		private void OnHeaderCellPointerEnter(int columnIndex)
-		{
-			if (_contentCells.Count == 0) return;
-			if (columnIndex < 0 || columnIndex >= _contentCells[0].Count) return;
-
-			// Highlight all cells in the column
-			foreach (var rowCells in _contentCells)
-			{
-				var cell = rowCells[columnIndex];
-				cell.AddToClassList("ui-table__column--highlighted");
-			}
-		}
-
-		private void OnHeaderCellPointerLeave(int columnIndex)
-		{
-			if (_contentCells.Count == 0) return;
-			if (columnIndex < 0 || columnIndex >= _contentCells[0].Count) return;
-
-			// Remove highlight from all cells in the column
-			foreach (var rowCells in _contentCells)
-			{
-				var cell = rowCells[columnIndex];
-				cell.RemoveFromClassList("ui-table__column--highlighted");
-			}
-		}
-
-		private void OnTopLeftCellPointerEnter()
-		{
-			AddToClassList("ui-table--highlighted");
-		}
-
-		private void OnTopLeftCellPointerLeave()
-		{
-			RemoveFromClassList("ui-table--highlighted");
-		}
-
-		// Method to add a new row
-		public void AddRow(Dictionary<int, VisualElement> cellContents = null)
-		{
-			var rowIndex = _contentRows.Count;
-			AddRowInternal(rowIndex, _columns, DefaultColumnWidth, DefaultRowHeight, null, cellContents);
-		}
-
-		// Internal method to add a row (used during initialization and dynamic addition)
+		// Shared by table construction and AddRow. rowIndex is the new row's position; cellContents seeds
+		// initial cell content keyed by content-column index.
 		private void AddRowInternal(int rowIndex, List<ColumnDefinition> columns, float defaultColumnWidth, float defaultRowHeight, Dictionary<int, float> rowHeights = null, Dictionary<int, VisualElement> cellContents = null)
 		{
 			var rowHeight = rowHeights != null && rowHeights.ContainsKey(rowIndex) ? rowHeights[rowIndex] : defaultRowHeight;
@@ -401,251 +498,47 @@ namespace Nonatomic.UIElements
 			var row = new Row(rowIndex);
 			row.SetRowHeight(rowHeight, _flexibleRowHeights);
 
-			// Calculate total row width based on column widths
 			var totalRowWidth = 0f;
-
-			var contentRowCells = new List<VisualElement>();
 			for (var j = 1; j < columns.Count; j++)
 			{
 				var column = columns[j];
 				var columnWidth = column.Width ?? defaultColumnWidth;
 				totalRowWidth += columnWidth;
 
-				// Adjust columnIndex for event handlers
 				var columnIndex = j - 1;
-				
 				var cell = new TableCell(columnIndex, rowIndex);
 				cell.SetWidth(columnWidth);
 				cell.SetRowHeight(rowHeight, _flexibleRowHeights);
 				cell.RegisterCallback<ClickEvent>(evt => HandleTableCellClick(cell));
 
-				// Add cell content if provided
 				if (cellContents != null && cellContents.ContainsKey(columnIndex))
 				{
 					cell.Add(cellContents[columnIndex]);
 				}
 
-				// Add cell to row
-				row.Add(cell);
-
-				// Store cell in contentRowCells
-				contentRowCells.Add(cell);
+				row.AddCell(cell);
 			}
 
 			row.SetRowWidth(totalRowWidth);
 
-			// Add row to _contentRows and _contentCells
-			_contentRows.Add(row);
-			_contentCells.Add(contentRowCells);
-
-			// Add row to content scroll view
-			_contentArea.ContentScrollView.contentContainer.Add(row);
-
-			// Update row numbers
 			var rowNumberWidth = columns[0].Width ?? defaultColumnWidth;
-			var rowNumberCell = new RowHeaderCell($"{_rowNumberCells.Count + 1}", rowNumberWidth, rowHeight, rowIndex);
-			rowNumberCell.SetRowHeight(rowHeight, _flexibleRowHeights);
-			rowNumberCell.RegisterCallback<PointerEnterEvent>(evt => OnRowHeaderPointerEnter(rowNumberCell.RowIndex));
-			rowNumberCell.RegisterCallback<PointerLeaveEvent>(evt => OnRowHeaderPointerLeave(rowNumberCell.RowIndex));
-			rowNumberCell.RegisterCallback<ClickEvent>(evt => HandleRowHeaderClick(rowNumberCell));
-			
-			_rowNumberCells.Add(rowNumberCell);
-			_contentArea.RowNumberScrollView.contentContainer.Add(rowNumberCell);
-		}
+			var numberCell = new RowHeaderCell($"{_rows.Count + 1}", rowNumberWidth, rowHeight, rowIndex);
+			numberCell.SetRowHeight(rowHeight, _flexibleRowHeights);
+			numberCell.RegisterCallback<PointerEnterEvent>(evt => _highlighter.SetRowHighlight(row, true));
+			numberCell.RegisterCallback<PointerLeaveEvent>(evt => _highlighter.SetRowHighlight(row, false));
+			numberCell.RegisterCallback<ClickEvent>(evt => HandleRowHeaderClick(numberCell));
+			row.NumberCell = numberCell;
 
-
-		// Method to remove a row
-
-		public void RemoveRow(int rowIndex)
-		{
-			if (rowIndex < 0 || rowIndex >= _contentRows.Count)
-			{
-				throw new ArgumentOutOfRangeException(nameof(rowIndex));
-			}
-
-			// Remove the content row from the content scroll view
-			var row = _contentRows[rowIndex];
-			var contentContainer = _contentArea.ContentScrollView.contentContainer;
-			if (contentContainer.Contains(row))
-			{
-				contentContainer.Remove(row);
-			}
-
-			_contentRows.RemoveAt(rowIndex);
-			_contentCells.RemoveAt(rowIndex);
-
-			// Remove the row number cell from the row number scroll view
-			var rowNumberContainer = _contentArea.RowNumberScrollView.contentContainer;
-			var rowNum = _rowNumberCells[rowIndex];
-			if (rowNumberContainer.Contains(rowNum))
-			{
-				rowNumberContainer.Remove(rowNum);
-			}
-			_rowNumberCells.RemoveAt(rowIndex);
-
-			// Reindex and restyle the rows that shifted up to fill the gap
-			for (var i = rowIndex; i < _contentRows.Count; i++)
-			{
-				var currentRow = _contentRows[i];
-				currentRow.RemoveFromClassList("ui-table__row--even");
-				currentRow.RemoveFromClassList("ui-table__row--odd");
-				currentRow.AddToClassList((i + 1) % 2 == 0 ? "ui-table__row--even" : "ui-table__row--odd");
-
-				// Keep the row index on each content cell in sync with its new position
-				foreach (var cell in _contentCells[i])
-				{
-					if (cell is TableCell tableCell)
-					{
-						tableCell.SetRowIndex(i);
-					}
-				}
-
-				var rowNumberCell = _rowNumberCells[i];
-				rowNumberCell.SetRowIndex(i);
-				rowNumberCell.SetLabel($"{i + 1}");
-				rowNumberCell.RemoveFromClassList("ui-table__fixed-column--even");
-				rowNumberCell.RemoveFromClassList("ui-table__fixed-column--odd");
-				rowNumberCell.AddToClassList((i + 1) % 2 == 0 ? "ui-table__fixed-column--even" : "ui-table__fixed-column--odd");
-			}
-		}
-
-		public void SetColumn(int columnIndex, ColumnDefinition columnDefinition)
-		{
-			//Add 1 because of the row number column
-			columnIndex += 1;
-			
-			if (columnIndex < 0 || columnIndex >= _columns.Count)
-			{
-				AddColumn(columnDefinition);
-				return;
-			}
-			
-			_columns[columnIndex] = columnDefinition;
-			var columnWidth = columnDefinition.Width ?? DefaultColumnWidth;
-
-			//remove 1 from the column index because the row number is not included in this container
-			columnIndex -= 1;
-			var header = _headerScrollView.contentContainer.ElementAt(columnIndex) as HeaderCell;
-			header.SetLabel(columnDefinition.Label);
-			header.SetWidth(columnWidth);
-
-			// Resize the body cells in this column so they stay aligned with the header
-			foreach (var rowCells in _contentCells)
-			{
-				if (columnIndex < rowCells.Count && rowCells[columnIndex] is TableCell cell)
-				{
-					cell.SetWidth(columnWidth);
-				}
-			}
-
-			UpdateRowWidths();
-		}
-
-		public void AddColumn(ColumnDefinition columnDefinition)
-		{
-			_columns.Add(columnDefinition);
-
-			// Add header cell
-			var columnWidth = columnDefinition.Width ?? 100f;
-			var columnIndex = _columns.Count - 1;
-			
-			var headerCell = new ColumnHeaderCell(columnDefinition.Label, columnWidth, 30f, columnIndex);
-			headerCell.RegisterCallback<PointerEnterEvent>(evt => OnHeaderCellPointerEnter(columnIndex-1));
-			headerCell.RegisterCallback<PointerLeaveEvent>(evt => OnHeaderCellPointerLeave(columnIndex-1));
-			headerCell.RegisterCallback<ClickEvent>(evt => HandleColumnHeaderClick(headerCell));
-			_headerScrollView.contentContainer.Add(headerCell);
-
-			// Add cells to each row
-			// columnIndex includes the row-number column, so subtract 1 for the content-based cell index
-			var contentColumnIndex = columnIndex - 1;
-			for (var i = 0; i < _contentRows.Count; i++)
-			{
-				var row = _contentRows[i];
-				var cell = new TableCell(contentColumnIndex, i);
-				cell.RegisterCallback<ClickEvent>(evt => HandleTableCellClick(cell));
-				cell.SetWidth(columnWidth);
-
-				row.Add(cell);
-				_contentCells[i].Add(cell);
-			}
-
-			// Widen the rows to include the new column, otherwise the new cells render
-			// past the row's fixed width and get clipped by the scroll viewport.
-			UpdateRowWidths();
-		}
-
-
-		// Method to remove a column
-
-		public void RemoveColumn(int columnIndex)
-		{
-			if (columnIndex < 0 || columnIndex >= _columns.Count - 1)
-			{
-				throw new System.ArgumentOutOfRangeException(nameof(columnIndex));
-			}
-
-			// Remove header cell
-			_headerScrollView.contentContainer.RemoveAt(columnIndex);
-
-			// Remove cells from each row
-			for (var i = 0; i < _contentRows.Count; i++)
-			{
-				var row = _contentRows[i];
-				var cell = _contentCells[i][columnIndex];
-				row.Remove(cell);
-				_contentCells[i].RemoveAt(columnIndex);
-			}
-
-			_columns.RemoveAt(columnIndex + 1);
-			UpdateRowWidths();
-		}
-
-
-		// Method to show row numbers column
-
-		public void ShowRowNumbers(ColumnDefinition columnDefinition = null)
-		{
-			_includeRowNumbers = true;
-			_contentArea.ShowRowNumbers();
-			_topLeftCornerCell?.RemoveFromClassList("ui-table__top-left-cell--hidden");
-
-			if (columnDefinition == null) return;
-			
-			_columns[0] = columnDefinition;
-			var columnWidth = columnDefinition.Width ?? 100f;
-
-			var header = _topRowContainer.ElementAt(0) as HeaderCell;
-			header.SetLabel(columnDefinition.Label);
-			header.SetWidth(columnWidth);
-
-			foreach (var cell in _rowNumberCells)
-			{
-				cell.SetWidth(columnWidth);
-			}
-		}
-
-		public void HideRowNumbers()
-		{
-			_includeRowNumbers = false;
-			_contentArea.HideRowNumbers();
-			_topLeftCornerCell?.AddToClassList("ui-table__top-left-cell--hidden");
-		}
-
-		/// <summary>
-		/// Controls whether the table stretches to fill its container's width or sizes to its
-		/// columns. Tables size to their columns by default; pass true to fill the available width.
-		/// </summary>
-		public void SetFillWidth(bool fillWidth)
-		{
-			EnableInClassList("ui-table--fill-width", fillWidth);
+			_rows.Add(row);
+			_contentArea.ContentScrollView.contentContainer.Add(row);
+			_contentArea.RowNumberScrollView.contentContainer.Add(numberCell);
 		}
 
 		private void UpdateRowWidths()
 		{
 			if (_columns.Count == 0) return;
-			
-			var totalRowWidth = 0f;
 
+			var totalRowWidth = 0f;
 			for (var j = 1; j < _columns.Count; j++)
 			{
 				var column = _columns[j];
@@ -653,9 +546,9 @@ namespace Nonatomic.UIElements
 				totalRowWidth += columnWidth;
 			}
 
-			foreach (var row in _contentRows)
+			foreach (var row in _rows)
 			{
-				row.style.width = totalRowWidth;
+				row.SetRowWidth(totalRowWidth);
 			}
 		}
 

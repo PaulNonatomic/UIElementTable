@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.6.0] - Jun 21, 2026
+- Refactored the table internals for single responsibility: Row now owns its cells, number cell, and index, and highlighting and row-height sizing moved into dedicated TableHighlighter and RowHeightController classes
+- Replaced the parallel cell, row, and row-number lists with a single row list, removing the indexing fragility behind the 0.5.0 row and column fixes
+- Expanded the public Row API (Index, NumberCell, Cells, CellCount, GetCell, AddCell, RemoveCellAt, SetIndex)
+
 ## [0.5.0] - Jun 20, 2026
 - Added SetFillWidth to stretch the table to its container width
 - Added a UITable Examples sample: an editor validation harness, runtime and world-space sample scenes, and Light/Ocean theme examples
