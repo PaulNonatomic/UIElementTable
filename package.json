@@ -13,8 +13,11 @@
   "keywords": [
     "Unity",
     "Package",
-    "Service",
-    "Locator"
+    "Table",
+    "Grid",
+    "DataGrid",
+    "UIElements",
+    "UI Toolkit"
   ],
   "author": {
     "name": "Nonatomic",
