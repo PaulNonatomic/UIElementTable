@@ -1,5 +1,8 @@
 # Change Log
 
+## [Unreleased]
+- Added EditMode tests covering row and column add/remove, reindexing, striping, and cell rebinding
+
 ## [0.6.0] - Jun 21, 2026
 - Refactored the table internals for single responsibility: Row now owns its cells, number cell, and index, and highlighting and row-height sizing moved into dedicated TableHighlighter and RowHeightController classes
 - Replaced the parallel cell, row, and row-number lists with a single row list, removing the indexing fragility behind the 0.5.0 row and column fixes
